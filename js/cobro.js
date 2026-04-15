@@ -29,14 +29,11 @@ const Cobro = {
 
     // Reset step 2
     document.getElementById('importe-input').value = '';
-    document.getElementById('mod-propina').checked = false;
     document.getElementById('mod-cumple').checked = false;
     document.getElementById('mod-pachas').checked = false;
     document.getElementById('mod-medias').checked = false;
-    document.getElementById('propina-input-row').classList.add('hidden');
     document.getElementById('pachas-exclude-row').classList.add('hidden');
     document.getElementById('medias-player-row').classList.add('hidden');
-    document.getElementById('propina-amount').value = '';
 
     this._renderPagadorList();
     this._actualizarResumen();
@@ -113,13 +110,19 @@ const Cobro = {
 
   // ─── Análisis con IA ─────────────────────────────────
 
-  async analizarConIA() {
+ async analizarConIA() {
     if (!this._imageBase64) {
       UI.toast('Primero haz una foto al tablero 📷');
       return;
     }
 
-    document.getElementById('analyzing-loader').classList.add('hidden');
+    document.getElementById('btn-analyze').classList.add('hidden');
+    document.getElementById('analyzing-loader').classList.remove('hidden');
+
+    try {
+      const resultado = await API.analizarTablero(this._imageBase64, this._imageMediaType);
+
+      document.getElementById('analyzing-loader').classList.add('hidden');
       document.getElementById('importe-input').value = resultado.importe;
       this._descripcionIA = resultado.descripcion || '';
 
@@ -132,14 +135,12 @@ const Cobro = {
       document.getElementById('analyzing-loader').classList.add('hidden');
       document.getElementById('btn-analyze').classList.remove('hidden');
       UI.toast(`Error al analizar: ${err.message}. Introduce el importe manualmente.`, 4000);
-      // Ir igualmente al step 2 para permitir entrada manual
       this._mostrarStep(2);
       this._renderPagadorList();
       this._renderModificadorLists();
       this._actualizarResumen();
     }
   },
-
   // ─── Step management ────────────────────────────────
 
   _mostrarStep(n) {
