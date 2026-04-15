@@ -152,8 +152,8 @@ const UI = {
       // Avatar
       const avatarDiv = document.createElement('div');
       avatarDiv.className = 'pc-avatar';
-      avatarDiv.textContent = CONFIG.EMOJIS[j.colorIdx] || '🧑';
-
+      avatarDiv.textContent = (j.nombre || '').trim().charAt(0).toUpperCase() || String(j.colorIdx + 1);
+      avatarDiv.style.fontSize = '15px';
       // Info
       const infoDiv = document.createElement('div');
       infoDiv.className = 'pc-info';
