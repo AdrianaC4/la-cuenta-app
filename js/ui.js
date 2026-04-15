@@ -61,7 +61,9 @@ const UI = {
       const avatar = document.createElement('div');
       avatar.className = 'player-avatar';
       avatar.style.background = CONFIG.COLORES[j.colorIdx];
-      avatar.textContent = CONFIG.EMOJIS[i] || '🧑';
+     const inicial = (j.nombre || '').trim().charAt(0).toUpperCase() || String(i + 1);
+      avatar.textContent = inicial;
+      avatar.style.fontSize = '15px';
 
       const input = document.createElement('input');
       input.type = 'text';
@@ -71,6 +73,7 @@ const UI = {
       input.maxLength = 16;
       input.addEventListener('input', () => {
         State.renombrarJugador(j.id, input.value);
+        avatar.textContent = input.value.trim().charAt(0).toUpperCase() || String(i + 1);
       });
       input.addEventListener('blur', () => {
         if (!input.value.trim()) {
@@ -132,7 +135,8 @@ const UI = {
 
     const maxDinero = Math.max(...State.jugadores.map(j => j.dineroActual));
 
-    State.jugadores.forEach(j => {
+    const jugadoresSorted = [...State.jugadores].sort((a, b) => b.dineroActual - a.dineroActual);
+    jugadoresSorted.forEach(j => {
       const pct = State.porcentajeDinero(j);
       const esGanador = j.dineroActual === maxDinero && j.dineroActual > 0;
       const esDanger  = pct <= 0.3 && pct > 0;
