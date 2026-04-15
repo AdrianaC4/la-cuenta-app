@@ -147,6 +147,13 @@ document.addEventListener('DOMContentLoaded', () => {
   });
 
   // Modificadores — mostrar/ocultar extras y actualizar resumen
+  document.getElementById('mod-propina').addEventListener('change', (e) => {
+    document.getElementById('propina-input-row').classList.toggle('hidden', !e.target.checked);
+    Cobro._actualizarResumen();
+  });
+  document.getElementById('propina-amount').addEventListener('input', () => {
+    Cobro._actualizarResumen();
+  });
 
   document.getElementById('mod-cumple').addEventListener('change', () => {
     Cobro._actualizarResumen();
