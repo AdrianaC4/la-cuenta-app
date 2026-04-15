@@ -4,18 +4,18 @@
 
 const Cobro = {
 
-  // Imagen capturada (base64 sin prefijo)
-  _imageBase64: null,
+  _imageBase64:    null,
   _imageMediaType: 'image/jpeg',
-  _stream: null,
+  _stream:         null,
+  _desglose:       [],   // líneas del desglose devuelto por la IA
 
-  // ─── Inicializar la pantalla de cobro ────────────────
+  // ─── Inicializar ─────────────────────────────────────
 
   iniciar() {
     this._imageBase64 = null;
-    this._stream = null;
+    this._stream      = null;
+    this._desglose    = [];
 
-    // Reset step 1
     this._mostrarStep(1);
     document.getElementById('camera-placeholder').classList.remove('hidden');
     document.getElementById('preview-img').classList.add('hidden');
@@ -27,14 +27,11 @@ const Cobro = {
 
     // Reset step 2
     document.getElementById('importe-input').value = '';
-    document.getElementById('mod-propina').checked = false;
-    document.getElementById('mod-cumple').checked = false;
-    document.getElementById('mod-pachas').checked = false;
-    document.getElementById('mod-medias').checked = false;
-    document.getElementById('propina-input-row').classList.add('hidden');
+    document.getElementById('mod-cumple').checked  = false;
+    document.getElementById('mod-pachas').checked  = false;
+    document.getElementById('mod-medias').checked  = false;
     document.getElementById('pachas-exclude-row').classList.add('hidden');
     document.getElementById('medias-player-row').classList.add('hidden');
-    document.getElementById('propina-amount').value = '';
 
     this._renderPagadorList();
     this._actualizarResumen();
@@ -63,7 +60,7 @@ const Cobro = {
   },
 
   capturar() {
-    const video = document.getElementById('camera-video');
+    const video  = document.getElementById('camera-video');
     const canvas = document.createElement('canvas');
     canvas.width  = video.videoWidth  || 640;
     canvas.height = video.videoHeight || 480;
@@ -125,21 +122,17 @@ const Cobro = {
 
       document.getElementById('analyzing-loader').classList.add('hidden');
       document.getElementById('importe-input').value = resultado.importe;
+      this._desglose = resultado.desglose || [];
 
       this._mostrarStep(2);
       this._renderPagadorList();
       this._renderModificadorLists();
       this._actualizarResumen();
 
-      if (resultado.descripcion) {
-        UI.toast(`🤖 ${resultado.descripcion.substring(0, 60)}`, 3500);
-      }
-
     } catch (err) {
       document.getElementById('analyzing-loader').classList.add('hidden');
       document.getElementById('btn-analyze').classList.remove('hidden');
       UI.toast(`Error al analizar: ${err.message}. Introduce el importe manualmente.`, 4000);
-      // Ir igualmente al step 2 para permitir entrada manual
       this._mostrarStep(2);
       this._renderPagadorList();
       this._renderModificadorLists();
@@ -147,7 +140,7 @@ const Cobro = {
     }
   },
 
-  // ─── Step management ────────────────────────────────
+  // ─── Steps ───────────────────────────────────────────
 
   _mostrarStep(n) {
     document.getElementById('cobro-step-1').classList.toggle('hidden', n !== 1);
@@ -161,7 +154,7 @@ const Cobro = {
     }
   },
 
-  // ─── Renderizar listas de pills ──────────────────────
+  // ─── Pills ───────────────────────────────────────────
 
   _renderPagadorList() {
     UI.renderPlayerPills('pagador-list', {
@@ -171,20 +164,17 @@ const Cobro = {
   },
 
   _renderModificadorLists() {
-    // A pachas — excluir del baño (multi)
     UI.renderPlayerPills('pachas-exclude-list', {
       multiSelect: true,
       onSelect: () => this._actualizarResumen(),
     });
-
-    // A medias — co-pagador (single)
     UI.renderPlayerPills('medias-player-list', {
       multiSelect: false,
       onSelect: () => this._actualizarResumen(),
     });
   },
 
-  // ─── Cálculo del resumen ─────────────────────────────
+  // ─── Cálculo ─────────────────────────────────────────
 
   calcular() {
     const importeBase = parseFloat(document.getElementById('importe-input').value) || 0;
@@ -194,28 +184,19 @@ const Cobro = {
     // Cumpleaños: +40€
     if (document.getElementById('mod-cumple').checked) {
       total += CONFIG.BONUS_CUMPLEANOS;
-      mods.push('🎂 Cumpleaños');
+      mods.push(`🎂 Cumpleaños (+€${CONFIG.BONUS_CUMPLEANOS})`);
     }
 
-    // Propina: + valor plato más barato
-    if (document.getElementById('mod-propina').checked) {
-      const propina = parseFloat(document.getElementById('propina-amount').value) || 0;
-      total += propina;
-      if (propina > 0) mods.push(`🪙 Propina (+€${propina})`);
-    }
-
-    // Pagador principal
     const pagadorIds = UI.getSelectedPillIds('pagador-list');
     const pagadorId  = pagadorIds[0] || null;
 
-    // A pachas
     const esPachas = document.getElementById('mod-pachas').checked;
     const esMedias = document.getElementById('mod-medias').checked;
 
     let pagos = [];
 
     if (esPachas) {
-      const excluidos = UI.getSelectedPillIds('pachas-exclude-list');
+      const excluidos     = UI.getSelectedPillIds('pachas-exclude-list');
       const participantes = State.jugadores.filter(j => !excluidos.includes(j.id));
       const n = participantes.length;
       if (n > 0) {
@@ -227,7 +208,6 @@ const Cobro = {
       const coIds = UI.getSelectedPillIds('medias-player-list');
       const coId  = coIds[0] || null;
       const mitad = Math.round(total / 2);
-
       if (pagadorId) pagos.push({ jugadorId: pagadorId, cantidad: mitad });
       if (coId && coId !== pagadorId) {
         pagos.push({ jugadorId: coId, cantidad: mitad });
@@ -241,20 +221,33 @@ const Cobro = {
     return { total: Math.round(total), pagos, mods, importeBase };
   },
 
+  // ─── Resumen ─────────────────────────────────────────
+
   _actualizarResumen() {
     const { total, pagos, mods } = this.calcular();
     const resumen = document.getElementById('resumen-content');
     resumen.innerHTML = '';
 
-    if (pagos.length === 0) {
-      resumen.innerHTML = '<div style="opacity:.6;font-size:13px">Selecciona quién paga</div>';
-      document.getElementById('btn-confirmar-cobro').disabled = true;
-      return;
+    // Desglose de la IA (si hay)
+    if (this._desglose.length > 0) {
+      const desgloseHeader = document.createElement('div');
+      desgloseHeader.className = 'resumen-section-label';
+      desgloseHeader.textContent = '🤖 Detectado por IA';
+      resumen.appendChild(desgloseHeader);
+
+      this._desglose.forEach(linea => {
+        const row = document.createElement('div');
+        row.className = 'resumen-row desglose';
+        row.innerHTML = `<span>${linea}</span>`;
+        resumen.appendChild(row);
+      });
+
+      const sep = document.createElement('div');
+      sep.className = 'resumen-separator';
+      resumen.appendChild(sep);
     }
 
-    document.getElementById('btn-confirmar-cobro').disabled = false;
-
-    // Modificadores aplicados
+    // Modificadores manuales
     mods.forEach(m => {
       const row = document.createElement('div');
       row.className = 'resumen-row';
@@ -262,9 +255,21 @@ const Cobro = {
       resumen.appendChild(row);
     });
 
-    // Pagadores
+    // Sin pagador seleccionado
+    if (pagos.length === 0) {
+      const hint = document.createElement('div');
+      hint.className = 'resumen-hint';
+      hint.textContent = 'Selecciona quién paga ↓';
+      resumen.appendChild(hint);
+      document.getElementById('btn-confirmar-cobro').disabled = true;
+      return;
+    }
+
+    document.getElementById('btn-confirmar-cobro').disabled = false;
+
+    // Línea(s) de pago
     pagos.forEach(({ jugadorId, cantidad }) => {
-      const j = State.getJugador(jugadorId);
+      const j   = State.getJugador(jugadorId);
       const row = document.createElement('div');
       row.className = 'resumen-row total';
       row.innerHTML = `
@@ -275,37 +280,29 @@ const Cobro = {
     });
   },
 
-  // ─── Confirmar y aplicar cobro ───────────────────────
+  // ─── Confirmar cobro ─────────────────────────────────
 
   confirmar() {
-    const { total, pagos, mods, importeBase } = this.calcular();
+    const { total, pagos, mods } = this.calcular();
 
     if (pagos.length === 0) {
       UI.toast('Selecciona quién paga la cuenta');
       return;
     }
 
-    // Aplicar al estado
     State.aplicarCobro(pagos, mods, total);
-
-    // Animar
     pagos.forEach(({ jugadorId }) => UI.animarDescuento(jugadorId));
-
-    // Detener cámara si sigue abierta
     this._detenerCamara();
 
-    // Volver al tablero
     UI.mostrarPagina('page-main');
-    UI.renderTablero();
+    UI.renderTablero();  // already sorted inside renderTablero
 
-    // Resumen en toast
-    const resumen = pagos.map(({ jugadorId, cantidad }) => {
+    const resumenTxt = pagos.map(({ jugadorId, cantidad }) => {
       const j = State.getJugador(jugadorId);
       return `${j?.nombre} -€${cantidad.toLocaleString('es-ES')}`;
     }).join(' · ');
-    UI.toast(`✅ ${resumen}`, 3000);
+    UI.toast(`✅ ${resumenTxt}`, 3000);
 
-    // ¿Fin de partida?
     if (State.hayAlguienArruinado()) {
       setTimeout(() => {
         UI.renderFinPartida();
