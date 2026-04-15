@@ -16,7 +16,7 @@
 // │     Máximo 6 cartas por ronda = 180€ máximo.       │
 // │                                                     │
 // │  3. CAFÉ                                            │
-// │     Suma el valor impreso en cada carta de café.   │
+// │     Detecta la carta pero no suma nada.   │
 // │                                                     │
 // │  4. TAPA PREMIUM (carta negra x2)                   │
 // │     Dobla el valor de la tapa a la que acompaña.   │
@@ -66,7 +66,7 @@ REGLAS DE CÁLCULO — aplícalas en este orden exacto:
    - Máximo posible: 6 cartas × 30€ = 180€.
 
 3. CAFÉ (cartas de café/marrón)
-   - Suma el valor impreso en cada carta de café visible.
+   - Detecta la carta pero no suma nada.
 
 4. TAPA PREMIUM (carta negra con símbolo "×2" o "x2")
    - Dobla el valor de la tapa junto a la que se jugó.
