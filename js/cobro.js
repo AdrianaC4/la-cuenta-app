@@ -246,8 +246,11 @@ const Cobro = {
       resumen.appendChild(iaRow);
     }
 
-    if (pagos.length === 0) {
-      resumen.innerHTML = '<div style="opacity:.6;font-size:13px">Selecciona quién paga</div>';
+if (pagos.length === 0) {
+      const hint = document.createElement('div');
+      hint.style.cssText = 'opacity:.6;font-size:13px;margin-top:4px;';
+      hint.textContent = 'Selecciona quién paga ↓';
+      resumen.appendChild(hint);
       document.getElementById('btn-confirmar-cobro').disabled = true;
       return;
     }
