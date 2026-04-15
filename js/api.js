@@ -15,29 +15,40 @@ const API = {
   async analizarTablero(base64Image, mediaType = 'image/jpeg') {
     const prompt = `Eres el asistente de la app de soporte del juego de cartas español "La Cuenta" (2 Tomatoes Games).
 
-En esta imagen aparece el tablero del juego con cartas de tapas jugadas en la mesa durante una ronda.
+En esta imagen aparece el tablero del juego con cartas jugadas en la mesa durante una ronda.
 
-Tu tarea es calcular el IMPORTE TOTAL FINAL de la cuenta, teniendo en cuenta las siguientes reglas del juego:
+REGLAS DE CÁLCULO — aplícalas exactamente:
 
-TIPOS DE CARTAS EN EL TABLERO:
-- Tapas (carne/naranja, pescado/azul, vegetal/verde): suman su valor a la cuenta
-- Vino (turquesa): suman su valor a la cuenta
-- Café: suma su valor a la cuenta
-- Plato Quemado (negro con signo negativo): RESTA el valor indicado y CIERRA esa pila
-- Tapa Premium (negro con "x2"): DOBLA el valor de la tapa a la que se aplicó
+1. TAPAS (cartas de colores: naranja=carne, azul=pescado, verde=vegetal)
+   - Suma el valor numérico impreso en cada carta de tapa visible.
 
-INSTRUCCIONES:
-1. Identifica todas las cartas visibles en el tablero
-2. Aplica los modificadores (Plato Quemado resta, Premium dobla)
-3. Suma el TOTAL FINAL de todas las cartas (ya ajustado)
-4. Si no puedes leer con claridad algún valor, estima razonablemente
+2. VINO TINTO (cartas de color turquesa/azul claro con una copa)
+   - REGLA FIJA: cada carta de vino vale SIEMPRE 30€, sin excepción.
+   - Cuenta cuántas cartas de vino hay y multiplica por 30.
+   - Máximo posible: 6 cartas × 30€ = 180€.
 
-RESPONDE ÚNICAMENTE con este formato JSON (sin texto adicional, sin markdown):
+3. CAFÉ (cartas de café/marrón)
+   - Detecta la carta pero no suma nada.
+
+4. TAPA PREMIUM (carta negra con símbolo x2)
+   - Dobla el valor de la tapa junto a la que se jugó.
+
+5. PLATO QUEMADO (carta negra con valor negativo)
+   - Resta su valor del total.
+
+6. PROPINA (carta negra especial jugada al pedir la cuenta)
+   - Si ves una o más cartas de Propina:
+     a) Identifica el valor más bajo entre todas las tapas visibles.
+     b) Multiplica ese valor × número de cartas de Propina jugadas.
+     c) Añade ese resultado al total.
+
+NO incluyas en el cálculo: Cumpleaños, A Pachas, A Medias, Baño, Cambio de Sentido.
+
+RESPONDE ÚNICAMENTE con este JSON exacto (sin texto adicional, sin markdown):
 {
   "importe": <número entero en euros>,
-  "detalle": "<breve descripción de las cartas identificadas>"
+  "detalle": "<resumen breve, máx 80 caracteres, ej: Tapas 90€ + Vino 2x30€ + Propina 20€ = 170€>"
 }`;
-
     try {
       const response = await fetch(CONFIG.WORKER_URL, {
         method: 'POST',
