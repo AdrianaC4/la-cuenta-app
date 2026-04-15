@@ -1,5 +1,7 @@
 // ═══════════════════════════════════════════════════════
 // LA CUENTA APP — Integración con Claude API
+// Las llamadas van al Cloudflare Worker proxy, que añade
+// la API key de forma segura. Nunca se expone en el cliente.
 // ═══════════════════════════════════════════════════════
 
 const API = {
@@ -21,7 +23,7 @@ TIPOS DE CARTAS EN EL TABLERO:
 - Tapas (carne/naranja, pescado/azul, vegetal/verde): suman su valor a la cuenta
 - Vino (turquesa): suman su valor a la cuenta
 - Café: suma su valor a la cuenta
-- Plato Quemado (negro con signo negativo): RESTA el valor indicado de la columna y CIERRA esa pila
+- Plato Quemado (negro con signo negativo): RESTA el valor indicado y CIERRA esa pila
 - Tapa Premium (negro con "x2"): DOBLA el valor de la tapa a la que se aplicó
 
 INSTRUCCIONES:
@@ -37,13 +39,10 @@ RESPONDE ÚNICAMENTE con este formato JSON (sin texto adicional, sin markdown):
 }`;
 
     try {
-      const response = await fetch('https://api.anthropic.com/v1/messages', {
+      const response = await fetch(CONFIG.WORKER_URL, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
-          'x-api-key': CONFIG.ANTHROPIC_API_KEY,
-          'anthropic-version': '2023-06-01',
-          'anthropic-dangerous-direct-browser-access': 'true',
         },
         body: JSON.stringify({
           model: CONFIG.CLAUDE_MODEL,

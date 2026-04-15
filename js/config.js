@@ -3,8 +3,8 @@
 // ═══════════════════════════════════════════════════════
 
 const CONFIG = {
-  // ⚠️ Reemplaza con tu Anthropic API key
-  ANTHROPIC_API_KEY: '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',
+  // URL del Cloudflare Worker proxy (la API key vive allí, de forma segura)
+  WORKER_URL: 'https://la-cuenta-proxy.cavallaro-adri.workers.dev',
 
   // Modelo Claude a usar
   CLAUDE_MODEL: 'claude-opus-4-5',
@@ -39,5 +39,5 @@ const CONFIG = {
   ],
 
   // Emojis avatar por índice
-  EMOJIS: ['🥑', '🍉', '🍋', '🫐', '🍎', '🥥', '🍅', '🥦'],
+  EMOJIS: ['🧑', '👩', '🧔', '👱', '👴', '👵', '🧒', '🧑‍🦱'],
 };
