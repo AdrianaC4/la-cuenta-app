@@ -1172,3 +1172,7 @@ html, body {
   min-height: 0;
   aspect-ratio: unset;
 }
+#cobro-step-2 {
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+}
