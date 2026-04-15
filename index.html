@@ -59,7 +59,7 @@
       </div>
 
       <button id="btn-start" class="btn btn-primary btn-start" disabled>
-        ¡A por tapas! 🍺
+        ¡A por tapas!
       </button>
     </div>
   </div>
@@ -70,7 +70,7 @@
   <div id="page-main" class="page">
     <header class="main-header">
       <div class="header-left">
-        <span class="header-logo">🍻</span>
+        <span class="header-logo">💸</span>
         <span class="header-title">La Cuenta</span>
       </div>
       <div class="header-right">
@@ -121,8 +121,7 @@
         </div>
         <div class="camera-actions">
           <button id="btn-open-camera" class="btn btn-secondary">📷 Cámara</button>
-          <button id="btn-upload-photo" class="btn btn-secondary">🖼️ Galería</button>
-          <input type="file" id="file-input" accept="image/*" class="hidden" />
+          <button id="btn-manual-cobro" class="btn btn-secondary">✏️ Manual</button>
         </div>
         <div id="camera-controls" class="camera-controls hidden">
           <button id="btn-capture" class="btn btn-primary">📸 Capturar</button>
@@ -142,7 +141,7 @@
         <div class="step-label">Paso 2 — Confirmar importe</div>
 
         <div class="importe-display">
-          <label class="importe-label">Importe detectado</label>
+       <label class="importe-label" id="importe-label">Importe detectado</label>
           <div class="importe-input-wrap">
             <span class="importe-prefix">€</span>
             <input type="number" id="importe-input" class="importe-input" min="0" max="9999" />
