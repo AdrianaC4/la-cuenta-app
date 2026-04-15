@@ -39,5 +39,5 @@ const CONFIG = {
   ],
 
   // Emojis avatar por índice
-  EMOJIS: ['🧑', '👩', '🧔', '👱', '👴', '👵', '🧒', '🧑‍🦱'],
+  EMOJIS: ['🫐', '🍋', '🥦', '🍏', '🍉', '🍅', '🌽', '🥝'],
 };
