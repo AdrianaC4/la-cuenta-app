@@ -8,12 +8,14 @@ const Cobro = {
   _imageBase64: null,
   _imageMediaType: 'image/jpeg',
   _stream: null,
+  _descripcionIA: '',
 
   // ─── Inicializar la pantalla de cobro ────────────────
 
   iniciar() {
     this._imageBase64 = null;
     this._stream = null;
+    this._descripcionIA = '';
 
     // Reset step 1
     this._mostrarStep(1);
@@ -117,23 +119,14 @@ const Cobro = {
       return;
     }
 
-    document.getElementById('btn-analyze').classList.add('hidden');
-    document.getElementById('analyzing-loader').classList.remove('hidden');
-
-    try {
-      const resultado = await API.analizarTablero(this._imageBase64, this._imageMediaType);
-
-      document.getElementById('analyzing-loader').classList.add('hidden');
+    document.getElementById('analyzing-loader').classList.add('hidden');
       document.getElementById('importe-input').value = resultado.importe;
+      this._descripcionIA = resultado.descripcion || '';
 
       this._mostrarStep(2);
       this._renderPagadorList();
       this._renderModificadorLists();
       this._actualizarResumen();
-
-      if (resultado.descripcion) {
-        UI.toast(`🤖 ${resultado.descripcion.substring(0, 60)}`, 3500);
-      }
 
     } catch (err) {
       document.getElementById('analyzing-loader').classList.add('hidden');
@@ -245,6 +238,12 @@ const Cobro = {
     const { total, pagos, mods } = this.calcular();
     const resumen = document.getElementById('resumen-content');
     resumen.innerHTML = '';
+    if (this._descripcionIA) {
+      const iaRow = document.createElement('div');
+      iaRow.style.cssText = 'font-size:12px;opacity:0.75;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.15);margin-bottom:4px;';
+      iaRow.textContent = '🤖 ' + this._descripcionIA;
+      resumen.appendChild(iaRow);
+    }
 
     if (pagos.length === 0) {
       resumen.innerHTML = '<div style="opacity:.6;font-size:13px">Selecciona quién paga</div>';
