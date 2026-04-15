@@ -1149,3 +1149,26 @@ html, body {
   .pc-amount { font-size: 20px; }
   .importe-input { font-size: 34px; }
 }
+/* ─── Cobro page: cámara ocupa todo el espacio disponible ─── */
+#page-cobro {
+  overflow: hidden;
+}
+#page-cobro .cobro-container {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  padding: 10px 12px 16px;
+  min-height: 0;
+}
+#cobro-step-1 {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  min-height: 0;
+}
+.camera-area {
+  flex: 1;
+  min-height: 0;
+  aspect-ratio: unset;
+}
