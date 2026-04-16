@@ -11,7 +11,7 @@
   <link rel="manifest" href="manifest.json" />
   <link rel="preconnect" href="https://fonts.googleapis.com" />
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
-  <link href="https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
+<link href="https://fonts.googleapis.com/css2?family=MedievalSharp&family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;600;700;800&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="css/style.css" />
 </head>
 <body>
@@ -24,7 +24,7 @@
     <div class="setup-container">
       <div class="logo-area">
         <div class="logo-icon">💸</div>
-        <h1 class="logo-title">La Cuenta</h1>
+        <h1 class="logo-title">LA CUENTA</h1>
         <p class="logo-sub">App de soporte para el juego</p>
       </div>
 
@@ -58,9 +58,10 @@
         </div>
       </div>
 
-      <button id="btn-start" class="btn btn-primary btn-start" disabled>
+    <button id="btn-start" class="btn btn-primary btn-start" disabled>
         ¡A por tapas!
       </button>
+      <p class="app-footer">© 2026 Adriana Cavallaro · La Cuenta - App De Soporte · All rights reserved</p>
     </div>
   </div>
 
@@ -89,10 +90,11 @@
 
       <div class="action-zone">
         <button id="btn-cobrar" class="btn btn-cobrar">
-          <span class="cobrar-icon">📷</span>
+          <span class="cobrar-icon">📷 ✏️</span>
           <span class="cobrar-text">Cobrar la cuenta</span>
         </button>
       </div>
+      <p class="app-footer app-footer-main">© 2026 Adriana Cavallaro · La Cuenta - App De Soporte · All rights reserved</p>
     </div>
   </div>
 
@@ -152,18 +154,17 @@
           <h3 class="mod-title">Cartas especiales</h3>
 
         <div class="mod-row" id="mod-propina-row">
-            <div class="mod-label">
+            <div class="mod-label-inline">
               <span class="mod-name">🪙 Propina</span>
               <span class="mod-desc">× plato más barato</span>
-            </div>
-            <div class="mod-extra propina-counter-row">
-              <button id="btn-propina-minus" class="counter-btn">−</button>
-              <span id="propina-count" class="counter-value">0</span>
-              <button id="btn-propina-plus" class="counter-btn">+</button>
-              <span class="counter-label">cartas</span>
+              <div class="propina-counter-inline">
+                <button id="btn-propina-minus" class="counter-btn">−</button>
+                <span id="propina-count" class="counter-value">0</span>
+                <button id="btn-propina-plus" class="counter-btn">+</button>
+              </div>
             </div>
           </div>
-
+          
           <div class="mod-row">
             <label class="mod-label">
               <input type="checkbox" id="mod-cumple" class="mod-check" />
@@ -216,6 +217,7 @@
         <button id="btn-cobro-manual" class="btn btn-secondary btn-confirmar" style="margin-top:8px">
           ← Volver a la foto
         </button>
+        <p class="app-footer app-footer-main">© 2026 Adriana Cavallaro · La Cuenta - App De Soporte · All rights reserved</p>
       </div>
 
     </div>
@@ -235,6 +237,7 @@
       <div id="historial-empty" class="historial-empty hidden">
         <p>Todavía no se ha pagado ninguna cuenta 🍺</p>
       </div>
+      <p class="app-footer app-footer-main">© 2026 Adriana Cavallaro · La Cuenta - App De Soporte · All rights reserved</p>
     </div>
   </div>
 
@@ -253,6 +256,7 @@
       <button id="btn-nueva-partida" class="btn btn-primary btn-start" style="margin-top:32px">
         🍺 Nueva partida
       </button>
+      <p class="app-footer app-footer-main">© 2026 Adriana Cavallaro · La Cuenta - App De Soporte · All rights reserved</p>
     </div>
   </div>
 
