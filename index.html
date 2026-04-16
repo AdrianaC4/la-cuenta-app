@@ -151,18 +151,16 @@
         <div class="modificadores-section">
           <h3 class="mod-title">Cartas especiales</h3>
 
-          <div class="mod-row" id="mod-propina-row">
-            <label class="mod-label">
-              <input type="checkbox" id="mod-propina" class="mod-check" />
+        <div class="mod-row" id="mod-propina-row">
+            <div class="mod-label">
               <span class="mod-name">🪙 Propina</span>
-              <span class="mod-desc">+ plato más barato</span>
-            </label>
-            <div id="propina-input-row" class="mod-extra hidden">
-              <span>Valor del plato más barato:</span>
-              <div class="mini-input-wrap">
-                <span>€</span>
-                <input type="number" id="propina-amount" class="mini-input" min="0" max="999" placeholder="0" />
-              </div>
+              <span class="mod-desc">× plato más barato</span>
+            </div>
+            <div class="mod-extra propina-counter-row">
+              <button id="btn-propina-minus" class="counter-btn">−</button>
+              <span id="propina-count" class="counter-value">0</span>
+              <button id="btn-propina-plus" class="counter-btn">+</button>
+              <span class="counter-label">cartas</span>
             </div>
           </div>
 
