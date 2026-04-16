@@ -147,13 +147,22 @@ document.addEventListener('DOMContentLoaded', () => {
     Cobro._actualizarResumen();
   });
 
-  // Modificadores — mostrar/ocultar extras y actualizar resumen
-  document.getElementById('mod-propina').addEventListener('change', (e) => {
-    document.getElementById('propina-input-row').classList.toggle('hidden', !e.target.checked);
-    Cobro._actualizarResumen();
+ // Propina — botones +/-
+  document.getElementById('btn-propina-minus').addEventListener('click', () => {
+    const el = document.getElementById('propina-count');
+    const current = parseInt(el.textContent) || 0;
+    if (current > 0) {
+      el.textContent = current - 1;
+      Cobro._actualizarResumen();
+    }
   });
-  document.getElementById('propina-amount').addEventListener('input', () => {
-    Cobro._actualizarResumen();
+  document.getElementById('btn-propina-plus').addEventListener('click', () => {
+    const el = document.getElementById('propina-count');
+    const current = parseInt(el.textContent) || 0;
+    if (current < 6) { // max 6 propina cards in the deck
+      el.textContent = current + 1;
+      Cobro._actualizarResumen();
+    }
   });
 
   document.getElementById('mod-cumple').addEventListener('change', () => {
