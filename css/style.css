@@ -1176,3 +1176,41 @@ html, body {
   overflow-y: auto;
   -webkit-overflow-scrolling: touch;
 }
+/* ─── Propina counter ─── */
+.propina-counter-row {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  margin-top: 8px;
+}
+.counter-btn {
+  width: 32px;
+  height: 32px;
+  border-radius: 50%;
+  border: 2px solid var(--rojo);
+  background: var(--blanco);
+  color: var(--rojo);
+  font-size: 20px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.15s;
+}
+.counter-btn:active { background: var(--rojo); color: var(--blanco); transform: scale(0.92); }
+.counter-value {
+  font-family: var(--font-display);
+  font-size: 22px;
+  font-weight: 700;
+  color: var(--rojo);
+  min-width: 24px;
+  text-align: center;
+}
+.counter-label {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--gris);
+}
