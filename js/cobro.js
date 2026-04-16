@@ -163,7 +163,6 @@ const Cobro = {
     const tapas    = cartas.filter(c => c.tipo === 'tapa');
     const vinos    = cartas.filter(c => c.tipo === 'vino');
     const quemados = cartas.filter(c => c.tipo === 'quemado');
-    const propinas = cartas.filter(c => c.tipo === 'propina');
 
    // Tapas base (premium ya viene marcado en la carta)
     tapas.forEach(t => {
@@ -185,8 +184,6 @@ const Cobro = {
       total += q.valor; // valor ya es negativo
       lineas.push(`Plato Quemado: ${q.valor}€`);
     });
-
-   const propinas = cartas.filter(c => c.tipo === 'propina');
 
     total = Math.max(0, total);
     const desglose = lineas.join(' · ') + ` = ${total}€`;
