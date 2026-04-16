@@ -36,6 +36,7 @@ const Cobro = {
     document.getElementById('mod-medias').checked = false;
     document.getElementById('pachas-exclude-row').classList.add('hidden');
     document.getElementById('medias-player-row').classList.add('hidden');
+    document.getElementById('propina-count').textContent = '0';
 
     this._renderPagadorList();
     this._actualizarResumen();
@@ -185,14 +186,7 @@ const Cobro = {
       lineas.push(`Plato Quemado: ${q.valor}€`);
     });
 
-    // Propinas (+ valor tapa más barata × nº propinas)
-    if (propinas.length > 0 && tapas.length > 0) {
-      const minTapa = Math.min(...tapas.map(t => t.valor));
-      const totalPropina = minTapa * propinas.length;
-      total += totalPropina;
-      const veces = propinas.length > 1 ? ` × ${propinas.length}` : '';
-      lineas.push(`Propina: ${minTapa}€${veces} = ${totalPropina}€`);
-    }
+   const propinas = cartas.filter(c => c.tipo === 'propina');
 
     total = Math.max(0, total);
     const desglose = lineas.join(' · ') + ` = ${total}€`;
@@ -241,11 +235,19 @@ const Cobro = {
       mods.push('🎂 Cumpleaños');
     }
 
-    // Propina: + valor plato más barato
-    if (document.getElementById('mod-propina').checked) {
-      const propina = parseFloat(document.getElementById('propina-amount').value) || 0;
-      total += propina;
-      if (propina > 0) mods.push(`🪙 Propina (+€${propina})`);
+    // Propina: nº de cartas × tapa más barata detectada por IA
+    const numPropinas = parseInt(document.getElementById('propina-count').textContent) || 0;
+    if (numPropinas > 0) {
+      const tapas = this._cartas.filter(c => c.tipo === 'tapa');
+      if (tapas.length > 0) {
+        const minTapa = Math.min(...tapas.map(t => t.valor));
+        const totalPropina = minTapa * numPropinas;
+        total += totalPropina;
+        mods.push(`🪙 Propina: ${numPropinas} × €${minTapa} = €${totalPropina}`);
+      } else {
+        // Modo manual: no hay cartas de IA, usar el importe base sin propina
+        // El jugador puede ajustar el importe manualmente
+      }
     }
 
     // Pagador principal
