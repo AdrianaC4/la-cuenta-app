@@ -13,41 +13,40 @@ const API = {
    * @returns {Promise<{ importe: number, descripcion: string }>}
    */
   async analizarTablero(base64Image, mediaType = 'image/jpeg') {
-    const prompt = `Eres el asistente de la app de soporte del juego de cartas español "La Cuenta" (2 Tomatoes Games).
+const prompt = `Eres el asistente de la app de soporte del juego de cartas español "La Cuenta" (2 Tomatoes Games).
 
 En esta imagen aparece el tablero del juego con cartas jugadas en la mesa durante una ronda.
 
-REGLAS DE CÁLCULO — aplícalas exactamente:
+Tu única tarea es IDENTIFICAR y LISTAR las cartas visibles. NO calcules el total — eso lo hará la app.
 
-1. TAPAS (cartas de colores: naranja=carne, azul=pescado, verde=vegetal)
-   - Suma el valor numérico impreso en cada carta de tapa visible.
+TIPOS DE CARTAS A DETECTAR:
+- TAPA: cartas de colores naranja (carne), azul (pescado) o verde (vegetal). Tienen un valor numérico impreso.
+- VINO: cartas turquesa/azul claro con una copa. Cada una vale SIEMPRE 30€ fijo.
+- PREMIUM: carta negra con símbolo x2. Indica que la tapa junto a ella vale el doble.
+- PLATO QUEMADO: carta negra con valor negativo. Resta ese valor.
+- PROPINA: carta negra especial. Indica que se añade el valor de la tapa más barata.
+- CAFÉ: ignórala completamente, no la incluyas en la respuesta.
+- CUMPLEAÑOS, BAÑO, CAMBIO DE SENTIDO, A PACHAS, A MEDIAS: ignóralos completamente.
 
-2. VINO TINTO (cartas de color turquesa/azul claro con una copa)
-   - REGLA FIJA: cada carta de vino vale SIEMPRE 30€, sin excepción.
-   - Cuenta cuántas cartas de vino hay y multiplica por 30.
-   - Máximo posible: 6 cartas × 30€ = 180€.
-
-3. CAFÉ (cartas de café/marrón)
-   - Detecta la carta pero no suma nada.
-
-4. TAPA PREMIUM (carta negra con símbolo x2)
-   - Dobla el valor de la tapa junto a la que se jugó.
-
-5. PLATO QUEMADO (carta negra con valor negativo)
-   - Resta su valor del total.
-
-6. PROPINA (carta negra especial jugada al pedir la cuenta)
-   - Si ves una o más cartas de Propina:
-     a) Identifica el valor más bajo entre todas las tapas visibles.
-     b) Multiplica ese valor × número de cartas de Propina jugadas.
-     c) Añade ese resultado al total.
-
-NO incluyas en el cálculo: Cumpleaños, A Pachas, A Medias, Baño, Cambio de Sentido.
+INSTRUCCIONES:
+1. Lista cada carta detectada con su tipo y valor.
+2. Para TAPA: indica el valor impreso exacto.
+3. Para VINO: indica siempre 30 como valor, independientemente de lo que veas impreso.
+4. Para PREMIUM: indica qué tapa afecta y su valor original.
+5. Para PLATO QUEMADO: indica el valor negativo.
+6. Para PROPINA: indica cuántas cartas de propina ves.
+7. Si no puedes leer un valor con claridad, haz tu mejor estimación.
 
 RESPONDE ÚNICAMENTE con este JSON exacto (sin texto adicional, sin markdown):
 {
-  "importe": <número entero en euros>,
-  "detalle": "<resumen breve, máx 80 caracteres, ej: Tapas 90€ + Vino 2x30€ + Propina 20€ = 170€>"
+  "cartas": [
+    {"tipo": "tapa", "nombre": "Croquetas", "valor": 20},
+    {"tipo": "tapa", "nombre": "Morcilla", "valor": 50},
+    {"tipo": "vino", "nombre": "Vino", "valor": 30},
+    {"tipo": "premium", "nombre": "Premium", "afecta_valor": 20},
+    {"tipo": "quemado", "nombre": "Plato Quemado", "valor": -40},
+    {"tipo": "propina", "nombre": "Propina", "cantidad": 1}
+  ]
 }`;
     try {
       const response = await fetch(CONFIG.WORKER_URL, {
@@ -93,8 +92,7 @@ RESPONDE ÚNICAMENTE con este JSON exacto (sin texto adicional, sin markdown):
       const parsed = JSON.parse(clean);
 
       return {
-        importe: Math.round(Number(parsed.importe) || 0),
-        descripcion: parsed.detalle || '',
+        cartas: Array.isArray(parsed.cartas) ? parsed.cartas : [],
       };
 
     } catch (err) {
