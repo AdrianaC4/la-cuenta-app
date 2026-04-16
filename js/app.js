@@ -119,18 +119,18 @@ document.addEventListener('DOMContentLoaded', () => {
     }
   });
 
-  // Subir desde galería
-  document.getElementById('btn-upload-photo').addEventListener('click', () => {
-    document.getElementById('file-input').click();
+  // Entrada manual — saltar directamente al step 2
+  document.getElementById('btn-manual-cobro').addEventListener('click', () => {
+    document.getElementById('importe-label').textContent = 'Importe a cobrar';
+    Cobro._cartas = [];
+    Cobro._descripcionIA = '';
+    document.getElementById('importe-input').value = '';
+    Cobro._mostrarStep(2);
+    Cobro._renderPagadorList();
+    Cobro._renderModificadorLists();
+    Cobro._actualizarResumen();
   });
-
-  document.getElementById('file-input').addEventListener('change', async (e) => {
-    const file = e.target.files[0];
-    if (!file) return;
-    await Cobro.cargarFoto(file);
-    e.target.value = ''; // reset para permitir reselección
-  });
-
+  
   // Analizar con IA
   document.getElementById('btn-analyze').addEventListener('click', () => {
     Cobro.analizarConIA();
@@ -138,6 +138,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   // Volver a la foto desde step 2
   document.getElementById('btn-cobro-manual').addEventListener('click', () => {
+    document.getElementById('importe-label').textContent = 'Importe detectado';
     Cobro.volverAFoto();
   });
 
@@ -161,6 +162,7 @@ document.addEventListener('DOMContentLoaded', () => {
 
   document.getElementById('mod-pachas').addEventListener('change', (e) => {
     document.getElementById('pachas-exclude-row').classList.toggle('hidden', !e.target.checked);
+    
     // A pachas y A medias son mutuamente excluyentes
     if (e.target.checked) {
       document.getElementById('mod-medias').checked = false;
