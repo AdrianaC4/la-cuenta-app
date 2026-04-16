@@ -161,20 +161,17 @@ const Cobro = {
     // Separar por tipo
     const tapas    = cartas.filter(c => c.tipo === 'tapa');
     const vinos    = cartas.filter(c => c.tipo === 'vino');
-    const premiums = cartas.filter(c => c.tipo === 'premium');
     const quemados = cartas.filter(c => c.tipo === 'quemado');
     const propinas = cartas.filter(c => c.tipo === 'propina');
 
-    // Tapas base
+   // Tapas base (premium ya viene marcado en la carta)
     tapas.forEach(t => {
-      // Check if a premium applies to this tapa value
-      const tienePremium = premiums.some(p => p.afecta_valor === t.valor);
-      const valor = tienePremium ? t.valor * 2 : t.valor;
+      const valor = t.premium ? t.valor * 2 : t.valor;
       total += valor;
-      const sufijo = tienePremium ? ` ×2 (Premium) = ${valor}€` : `€`;
+      const sufijo = t.premium ? ` ×2 (Premium) = ${valor}€` : `€`;
       lineas.push(`${t.nombre}: ${t.valor}${sufijo}`);
     });
-
+    
     // Vinos (siempre 30€ cada uno)
     if (vinos.length > 0) {
       const totalVino = vinos.length * 30;
