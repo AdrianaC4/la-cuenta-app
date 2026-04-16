@@ -8,7 +8,8 @@ const Cobro = {
   _imageBase64: null,
   _imageMediaType: 'image/jpeg',
   _stream: null,
-  _descripcionIA: '',
+ _descripcionIA: '',
+  _cartas: [],
 
   // ─── Inicializar la pantalla de cobro ────────────────
 
@@ -16,6 +17,7 @@ const Cobro = {
     this._imageBase64 = null;
     this._stream = null;
     this._descripcionIA = '';
+    this._cartas = [];
 
     // Reset step 1
     this._mostrarStep(1);
@@ -122,9 +124,11 @@ const Cobro = {
     try {
       const resultado = await API.analizarTablero(this._imageBase64, this._imageMediaType);
 
-      document.getElementById('analyzing-loader').classList.add('hidden');
-      document.getElementById('importe-input').value = resultado.importe;
-      this._descripcionIA = resultado.descripcion || '';
+     document.getElementById('analyzing-loader').classList.add('hidden');
+      this._cartas = resultado.cartas || [];
+      const calculado = this._calcularDesdeCartas(this._cartas);
+      document.getElementById('importe-input').value = calculado.total;
+      this._descripcionIA = calculado.desglose;
 
       this._mostrarStep(2);
       this._renderPagadorList();
@@ -148,6 +152,55 @@ const Cobro = {
     document.getElementById('cobro-step-2').classList.toggle('hidden', n !== 2);
   },
 
+  // ─── Cálculo JS desde cartas detectadas por IA ───────
+
+  _calcularDesdeCartas(cartas) {
+    let total = 0;
+    const lineas = [];
+
+    // Separar por tipo
+    const tapas    = cartas.filter(c => c.tipo === 'tapa');
+    const vinos    = cartas.filter(c => c.tipo === 'vino');
+    const premiums = cartas.filter(c => c.tipo === 'premium');
+    const quemados = cartas.filter(c => c.tipo === 'quemado');
+    const propinas = cartas.filter(c => c.tipo === 'propina');
+
+    // Tapas base
+    tapas.forEach(t => {
+      // Check if a premium applies to this tapa value
+      const tienePremium = premiums.some(p => p.afecta_valor === t.valor);
+      const valor = tienePremium ? t.valor * 2 : t.valor;
+      total += valor;
+      const sufijo = tienePremium ? ` ×2 (Premium) = ${valor}€` : `€`;
+      lineas.push(`${t.nombre}: ${t.valor}${sufijo}`);
+    });
+
+    // Vinos (siempre 30€ cada uno)
+    if (vinos.length > 0) {
+      const totalVino = vinos.length * 30;
+      total += totalVino;
+      lineas.push(`Vino: ${vinos.length} × 30€ = ${totalVino}€`);
+    }
+
+    // Platos quemados (restan)
+    quemados.forEach(q => {
+      total += q.valor; // valor ya es negativo
+      lineas.push(`Plato Quemado: ${q.valor}€`);
+    });
+
+    // Propinas (+ valor tapa más barata × nº propinas)
+    if (propinas.length > 0 && tapas.length > 0) {
+      const minTapa = Math.min(...tapas.map(t => t.valor));
+      const totalPropina = minTapa * propinas.length;
+      total += totalPropina;
+      const veces = propinas.length > 1 ? ` × ${propinas.length}` : '';
+      lineas.push(`Propina: ${minTapa}€${veces} = ${totalPropina}€`);
+    }
+
+    total = Math.max(0, total);
+    const desglose = lineas.join(' · ') + ` = ${total}€`;
+    return { total, desglose };
+  },
   volverAFoto() {
     this._mostrarStep(1);
     if (this._imageBase64) {
