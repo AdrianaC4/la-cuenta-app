@@ -242,8 +242,11 @@ const UI = {
         if (multiSelect) {
           pill.classList.toggle('selected');
         } else {
+          const wasSelected = pill.classList.contains('selected');
           container.querySelectorAll('.player-pill').forEach(p => p.classList.remove('selected'));
-          pill.classList.add('selected');
+          if (!wasSelected) {
+            pill.classList.add('selected');
+          }
         }
         onSelect?.();
       });
