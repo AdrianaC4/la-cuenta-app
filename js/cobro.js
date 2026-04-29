@@ -60,22 +60,26 @@ const Cobro = {
       document.getElementById('btn-analyze').classList.add('hidden');
     } catch (err) {
       console.error('Error cámara:', err);
-      UI.toast('No se pudo acceder a la cámara. Usa la galería 📷');
+      UI.toast('No se pudo acceder a la cámara. Vuelve a intentar.');
     }
   },
 
   capturar() {
     const video = document.getElementById('camera-video');
-    const canvas = document.createElement('canvas');
-    canvas.width  = video.videoWidth  || 640;
-    canvas.height = video.videoHeight || 480;
-    canvas.getContext('2d').drawImage(video, 0, 0);
+    const raw = document.createElement('canvas');
+    raw.width  = video.videoWidth  || 640;
+    raw.height = video.videoHeight || 480;
+    raw.getContext('2d').drawImage(video, 0, 0);
 
-    this._imageBase64    = canvas.toDataURL('image/jpeg', 0.85).split(',')[1];
-    this._imageMediaType = 'image/jpeg';
-
-    this._detenerCamara();
-    this._mostrarPreview(`data:image/jpeg;base64,${this._imageBase64}`);
+    // Live camera feed is already correctly oriented — just resize + contrast
+    raw.toBlob(blob => {
+      this._procesarImagen(blob, 1).then(dataUrl => {
+        this._imageBase64    = dataUrl.split(',')[1];
+        this._imageMediaType = 'image/jpeg';
+        this._detenerCamara();
+        this._mostrarPreview(dataUrl);
+      });
+    }, 'image/jpeg', 0.92);
   },
 
   _detenerCamara() {
@@ -89,17 +93,144 @@ const Cobro = {
 
   cargarFoto(file) {
     return new Promise((resolve, reject) => {
-      const reader = new FileReader();
-      reader.onload = e => {
-        const dataUrl = e.target.result;
-        const [meta, b64] = dataUrl.split(',');
-        this._imageBase64    = b64;
-        this._imageMediaType = meta.match(/:(.*?);/)[1] || 'image/jpeg';
+      // Read EXIF orientation then process
+      this._procesarImagen(file, null).then(dataUrl => {
+        this._imageBase64    = dataUrl.split(',')[1];
+        this._imageMediaType = 'image/jpeg';
         this._mostrarPreview(dataUrl);
         resolve();
+      }).catch(reject);
+    });
+  },
+
+  // ─── Pre-procesado de imagen ─────────────────────────
+  // Aplica: corrección EXIF, resize a 1568px, boost de contraste
+
+  _procesarImagen(blob, exifOverride) {
+    return new Promise((resolve, reject) => {
+      const url = URL.createObjectURL(blob);
+      const img = new Image();
+
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+
+        // ── 1. Leer orientación EXIF ──────────────────
+        // exifOverride = 1 significa sin rotación (cámara en vivo)
+        // Para archivos leemos los bytes EXIF directamente
+        const doProcess = (orientation) => {
+          const MAX = 1568;
+          let sw = img.naturalWidth;
+          let sh = img.naturalHeight;
+
+          // ── 2. Calcular dimensiones finales ──────────
+          const rotated = orientation >= 5 && orientation <= 8;
+          const longEdge = rotated ? sh : sw;
+          const scale    = longEdge > MAX ? MAX / longEdge : 1;
+          const dw = Math.round(sw * scale);
+          const dh = Math.round(sh * scale);
+
+          // ── 3. Canvas con rotación EXIF corregida ────
+          const canvas = document.createElement('canvas');
+          const ctx    = canvas.getContext('2d');
+
+          // Ajustar canvas según orientación
+          if (rotated) {
+            canvas.width  = dh;
+            canvas.height = dw;
+          } else {
+            canvas.width  = dw;
+            canvas.height = dh;
+          }
+
+          ctx.save();
+          switch (orientation) {
+            case 2: ctx.transform(-1, 0, 0, 1, dw, 0); break;
+            case 3: ctx.transform(-1, 0, 0, -1, dw, dh); break;
+            case 4: ctx.transform(1, 0, 0, -1, 0, dh); break;
+            case 5: ctx.transform(0, 1, 1, 0, 0, 0); break;
+            case 6: ctx.transform(0, 1, -1, 0, dh, 0); break;
+            case 7: ctx.transform(0, -1, -1, 0, dh, dw); break;
+            case 8: ctx.transform(0, -1, 1, 0, 0, dw); break;
+            default: break; // orientation 1 = normal
+          }
+
+          ctx.drawImage(img, 0, 0, dw, dh);
+          ctx.restore();
+
+          // ── 4. Boost de contraste suave (1.12x) ──────
+          try {
+            const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+            const data      = imageData.data;
+            const factor    = 1.12;
+            const intercept = 128 * (1 - factor);
+            for (let i = 0; i < data.length; i += 4) {
+              data[i]     = Math.min(255, Math.max(0, data[i]     * factor + intercept));
+              data[i + 1] = Math.min(255, Math.max(0, data[i + 1] * factor + intercept));
+              data[i + 2] = Math.min(255, Math.max(0, data[i + 2] * factor + intercept));
+            }
+            ctx.putImageData(imageData, 0, 0);
+          } catch (e) {
+            // Cross-origin o SecurityError — continuar sin contraste
+            console.warn('Contrast boost skipped:', e);
+          }
+
+          resolve(canvas.toDataURL('image/jpeg', 0.88));
+        };
+
+        // Si ya tenemos la orientación (cámara en vivo), procesamos directamente
+        if (exifOverride !== null) {
+          doProcess(exifOverride);
+          return;
+        }
+
+        // ── Leer EXIF del archivo ─────────────────────
+        const reader = new FileReader();
+        reader.onload = ev => {
+          let orientation = 1;
+          try {
+            const view = new DataView(ev.target.result);
+            // Verificar cabecera JPEG
+            if (view.getUint16(0) === 0xFFD8) {
+              let offset = 2;
+              while (offset < view.byteLength) {
+                const marker = view.getUint16(offset);
+                offset += 2;
+                if (marker === 0xFFE1) {
+                  // APP1 — puede contener EXIF
+                  offset += 2; // saltar longitud del segmento
+                  if (view.getUint32(offset) === 0x45786966) {
+                    // "Exif"
+                    offset += 6;
+                    const little = view.getUint16(offset) === 0x4949;
+                    offset += 8;
+                    const tags = view.getUint16(offset, little);
+                    offset += 2;
+                    for (let t = 0; t < tags; t++) {
+                      if (view.getUint16(offset + t * 12, little) === 0x0112) {
+                        orientation = view.getUint16(offset + t * 12 + 8, little);
+                        break;
+                      }
+                    }
+                  }
+                  break;
+                } else if ((marker & 0xFF00) !== 0xFF00) {
+                  break;
+                } else {
+                  offset += view.getUint16(offset);
+                }
+              }
+            }
+          } catch (e) {
+            console.warn('EXIF read error:', e);
+          }
+          doProcess(orientation);
+        };
+        reader.onerror = () => doProcess(1);
+        reader.readAsArrayBuffer(blob);
       };
-      reader.onerror = reject;
-      reader.readAsDataURL(file);
+
+      img.onerror = reject;
+      img.src     = url;
     });
   },
 
