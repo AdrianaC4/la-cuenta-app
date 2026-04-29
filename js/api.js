@@ -90,7 +90,7 @@ RESPONDE ÚNICAMENTE con este JSON exacto (sin texto adicional, sin markdown):
         },
         body: JSON.stringify({
           model: CONFIG.CLAUDE_MODEL,
-          max_tokens: 256,
+          max_tokens: 2000,
           messages: [
             {
               role: 'user',
