@@ -1242,16 +1242,14 @@ html, body {
 .app-footer-main {
   z-index: 4;
 }
-/* ─── Editor de cartas ─── */
+/* ─── Resumen edit button ─── */
 .resumen-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
   margin-bottom: 10px;
 }
-.resumen-header .resumen-title {
-  margin-bottom: 0;
-}
+.resumen-header .resumen-title { margin-bottom: 0; }
 .resumen-edit-btn {
   background: rgba(255,255,255,0.15);
   border: 1px solid rgba(255,255,255,0.3);
@@ -1266,46 +1264,118 @@ html, body {
 }
 .resumen-edit-btn:active { opacity: 0.7; }
 
-.editor-carta-row {
+/* ─── Step 3: Editor de cartas ─── */
+#cobro-step-3 {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  height: 100%;
+}
+.editor3-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  padding: 8px 4px;
-  border-bottom: 1px solid var(--crema-dark);
-}
-.editor-carta-nombre {
-  font-size: 14px;
-  font-weight: 600;
-  color: var(--negro);
-  flex: 1;
-}
-.editor-carta-remove {
-  background: none;
-  border: none;
-  color: var(--rojo);
-  font-size: 16px;
-  cursor: pointer;
-  padding: 4px 8px;
+  padding: 12px 4px 16px;
   flex-shrink: 0;
-  -webkit-tap-highlight-color: transparent;
+  gap: 12px;
 }
-.editor-add-section {
+.editor3-totals {
   display: flex;
-  gap: 8px;
-  align-items: center;
-  margin-top: 12px;
-  padding-top: 12px;
+  flex-direction: column;
+  gap: 2px;
+}
+.editor3-total-label {
+  font-size: 11px;
+  font-weight: 800;
+  color: var(--marron-light);
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+.editor3-total-amount {
+  font-family: var(--font-display);
+  font-size: 36px;
+  font-weight: 700;
+  color: var(--rojo);
+  line-height: 1;
+}
+.editor3-card-count {
+  font-size: 12px;
+  font-weight: 700;
+  color: var(--gris);
+}
+.editor3-listo {
+  flex-shrink: 0;
+  padding: 12px 20px;
+}
+.editor3-lista {
+  flex: 1;
+  overflow-y: auto;
+  -webkit-overflow-scrolling: touch;
+  display: flex;
+  flex-direction: column;
   border-top: 1px solid var(--crema-dark);
 }
-.editor-select {
+.editor3-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 10px 4px;
+  border-bottom: 1px solid var(--crema-dark);
+  gap: 12px;
+}
+.editor3-info {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
   flex: 1;
-  border: 2px solid var(--crema-dark);
-  border-radius: var(--radius-sm);
-  padding: 8px 10px;
-  font-family: var(--font-body);
-  font-size: 13px;
-  font-weight: 600;
+  min-width: 0;
+}
+.editor3-nombre {
+  font-size: 14px;
+  font-weight: 700;
   color: var(--negro);
-  background: var(--crema);
-  outline: none;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.editor3-sub {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--gris);
+}
+.editor3-stepper {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  flex-shrink: 0;
+}
+.editor3-btn {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  border: 2px solid var(--crema-dark);
+  background: var(--blanco);
+  color: var(--marron);
+  font-size: 16px;
+  font-weight: 700;
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  line-height: 1;
+  -webkit-tap-highlight-color: transparent;
+  transition: all 0.15s;
+  flex-shrink: 0;
+}
+.editor3-btn:active { background: var(--rojo); color: var(--blanco); border-color: var(--rojo); transform: scale(0.92); }
+.editor3-count {
+  font-family: var(--font-display);
+  font-size: 18px;
+  font-weight: 700;
+  color: var(--rojo);
+  min-width: 20px;
+  text-align: center;
+}
+.editor3-row:has(.editor3-count:not(:empty)) .editor3-count {
+  color: var(--rojo);
 }
