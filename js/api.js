@@ -13,151 +13,126 @@ const API = {
    * @returns {Promise<{ importe: number, descripcion: string }>}
    */
   async analizarTablero(base64Image, mediaType = 'image/jpeg') {
-const prompt = `You are the assistant for the Spanish board game "La Cuenta" (2 Tomatoes Games).
+const prompt = `You are a precise card-counting assistant for the Spanish board game "La Cuenta" by 2 Tomatoes Games.
 
-This image shows the game board with cards played during a round.
-
-Your only task is to IDENTIFY and COUNT the visible cards. Do NOT calculate any total — the app handles that.
+You will be shown a photo of the game table. Your job is to identify and list every card visible, then output them as JSON. You must reason step by step before producing the JSON — this reasoning is mandatory and will prevent counting errors.
 
 ═══════════════════════════════════════════════
-CRITICAL RULE — READ THIS FIRST
+PART 1 — THE UNIVERSAL COUNTING RULE
 ═══════════════════════════════════════════════
 
-IGNORE any text, name or number that appears upside-down in the image.
-Every card shows its value in two opposite corners — the bottom corner always
-appears inverted. Only read text that is right-side up.
-If a name or value appears twice on the same card (once normal, once inverted),
-count that card ONLY ONCE.
+Every card in this game — tapa, vino, plato quemado — has the same physical structure:
+
+  ┌─────────────────────┐
+  │  NAME / VALUE       │  ← TOP STRIP (right-side up)
+  ├─────────────────────┤
+  │                     │
+  │    [ILLUSTRATION]   │  ← ARTWORK in the center
+  │                     │
+  ├─────────────────────┤
+  │  EULAV / EMAN       │  ← BOTTOM STRIP (upside-down mirror of top)
+  └─────────────────────┘
+
+THE MOST IMPORTANT RULE IN THIS PROMPT:
+Any text strip that appears BELOW an illustration belongs to the SAME card
+as that illustration. It is the mirrored bottom edge of that card.
+It is NOT a separate card. NEVER count it. NEVER read its value.
+
+This applies to ALL card types without exception:
+- A tapa illustration with an upside-down strip below it = 1 card total
+- A vino bottle illustration with an upside-down strip below it = 1 card total
+- A plato quemado flame illustration with an upside-down strip below it = 1 card total
+
+The correct count formula for any group of cards:
+  NUMBER OF CARDS = number of right-side-up text strips visible
+  (The illustration and the upside-down strip below it add zero to this count)
 
 ═══════════════════════════════════════════════
-COMPLETE DECK INVENTORY
+PART 2 — CARD TYPES IN THE DECK
 ═══════════════════════════════════════════════
 
-ORANGE TAPAS (meat) — identify by name and illustration:
-  Chorizo, Croquetas, Albóndigas, Pinchito Moruno,
-  Morcilla, Callos, Rabo de Toro, Jamón de Jabugo
-  (2 copies of each in the deck)
+ORANGE TAPAS (meat) — 2 copies of each exist:
+  Chorizo 10€, Croquetas 20€, Albóndigas 30€, Pinchito Moruno 40€,
+  Morcilla 50€, Callos 60€, Rabo de Toro 70€, Jamón de Jabugo 100€
 
-BLUE TAPAS (fish) — identify by name and illustration:
-  Mejillones, Sardinas Fritas, Calamares a la Romana,
-  Chipirones Fritos, Anchoa, Pulpo a la Gallega,
-  Gambas al Ajillo, Percebes
-  (2 copies of each in the deck)
+BLUE TAPAS (fish) — 2 copies of each exist:
+  Mejillones 10€, Sardinas Fritas 20€, Calamares a la Romana 30€,
+  Chipirones Fritos 40€, Anchoa 50€, Pulpo a la Gallega 60€,
+  Gambas al Ajillo 70€, Percebes 100€
 
-GREEN TAPAS (vegetable) — identify by name and illustration:
-  Aceitunas, Gazpacho, Patatas Bravas, Tortilla de Patatas,
-  Pimientos del Padrón, Ensaladilla Rusa, Berenjena con Miel,
-  Tabla de Queso
-  (2 copies of each in the deck)
+GREEN TAPAS (vegetable) — 2 copies of each exist:
+  Aceitunas 10€, Gazpacho 20€, Patatas Bravas 30€, Tortilla de Patatas 40€,
+  Pimientos del Padrón 50€, Ensaladilla Rusa 60€, Berenjena con Miel 70€,
+  Tabla de Queso 100€
 
-VINO TINTO (red wine cards):
-  Turquoise/purple cards with a bottle and wine glass.
-  Only COUNT how many there are. Do not read their printed value.
+Tapas of the same color are stacked in columns. Each card in a column shows
+only its top strip (name + value, right-side up) except the bottom card which
+also shows its full illustration — and its upside-down bottom strip which you
+must ignore.
 
-PLATO QUEMADO (burnt plate):
-  Black card with flames and a printed negative value.
-  Possible values (only ONE card exists per value): 0€, -10€, -20€, -30€, -40€, -50€, -60€, -70€.
-  IMPORTANT: Only ONE card exists per value. If you see -40€ right-side up AND -40€
-  upside-down, it is the SAME card — count it ONCE.
-  Only read the value that appears right-side up.
+VINO TINTO — turquoise/purple cards with a wine bottle and glass illustration.
+  Count each card separately. Do not read any value from the card.
+  Apply the same rule: illustration + upside-down strip below = do not count twice.
 
-PREMIUM:
-  Black/gold card with "x2". Always partially covers the tapa it doubles.
-  Mark the affected tapa as premium: true.
-  Each Premium card affects only ONE tapa. There can be multiple per round.
+PLATO QUEMADO — black card with flames. Negative value printed on it.
+  Only ONE card exists per value: 0€, -10€, -20€, -30€, -40€, -50€, -60€, -70€.
+  Read only the right-side-up value. If you see the same value upside-down too,
+  it is the same card — count it once.
 
-IGNORE COMPLETELY (do not include in response):
-  Propina, A Medias, A Pachas, Cambio de Sentido,
-  Pastel de Cumpleaños, Toilette, Café.
+PREMIUM — black/gold card with "x2". Always placed on top of a tapa.
+  Mark the tapa it covers as premium: true. Do not add a separate tapa entry
+  for the Premium card itself.
+
+IGNORE COMPLETELY — do not include in output:
+  Propina, A Medias, A Pachas, Cambio de Sentido, Pastel de Cumpleaños,
+  Toilette, Café.
 
 ═══════════════════════════════════════════════
-HOW TO COUNT TAPAS — READ CAREFULLY
+PART 3 — YOUR REASONING PROCESS (mandatory)
 ═══════════════════════════════════════════════
 
-Tapas of the same color are stacked in a column. Here is the exact physical
-structure of every column, and the precise rule for counting:
+Before writing any JSON, you must work through these steps in your thinking:
 
-PHYSICAL STRUCTURE OF A COLUMN:
-┌─────────────────────────────────────────────┐
-│  [TOP CARD]                                 │
-│  ┌──────────────────┐  ← top strip          │
-│  │ NAME        10€  │  ← RIGHT-SIDE UP ✓    │
-│  └──────────────────┘                       │
-│                                             │
-│  [MIDDLE CARD(S)] — partially covered       │
-│  ┌──────────────────┐  ← top strip only     │
-│  │ NAME        30€  │  ← RIGHT-SIDE UP ✓    │
-│  └──────────────────┘                       │
-│                                             │
-│  [BOTTOM CARD] — fully visible              │
-│  ┌──────────────────┐  ← top strip          │
-│  │ NAME        70€  │  ← RIGHT-SIDE UP ✓    │
-│  ├──────────────────┤                       │
-│  │  [ILLUSTRATION]  │  ← food artwork       │
-│  ├──────────────────┤                       │
-│  │  €07        EMAN │  ← UPSIDE-DOWN ✗      │
-│  └──────────────────┘  ← IGNORE THIS STRIP  │
-└─────────────────────────────────────────────┘
+STEP 1 — IDENTIFY COLUMNS AND GROUPS
+  Look at the image. Identify each distinct group of cards:
+  - Orange tapa column(s)
+  - Blue tapa column(s)
+  - Green tapa column(s)
+  - Vino cards (scattered or grouped)
+  - Any black cards (Plato Quemado or Premium)
 
-COUNTING RULE — apply this exact formula for every column:
+STEP 2 — COUNT EACH GROUP USING THE UNIVERSAL RULE
+  For each group, count ONLY the right-side-up text strips.
+  For each illustration you see, ask yourself:
+    "Is there a text strip directly below this illustration?"
+    If yes → that strip is upside-down → ignore it → do not add to count.
 
-  TOTAL CARDS IN COLUMN =
-    (number of RIGHT-SIDE-UP text strips visible in the column)
-    ← this already includes the bottom card's top strip
+STEP 3 — IDENTIFY EACH CARD BY NAME
+  Match each right-side-up strip to a card name from the inventory.
+  If a name is unclear, choose the closest match from the deck list.
 
-  DO NOT ADD anything for the upside-down strip at the bottom.
-  DO NOT ADD anything for the food illustration (it belongs to the bottom card).
+STEP 4 — CHECK FOR PREMIUM
+  Is any tapa covered by a black/gold "x2" card?
+  If yes → mark that specific tapa as premium: true.
 
-In other words:
-  - Every right-side-up strip = 1 card ✓
-  - The food illustration = already counted via its own right-side-up strip ✓
-  - The upside-down strip below the illustration = 0 cards ✗ IGNORE
+STEP 5 — SELF-CHECK before writing JSON
+  For each card type, ask:
+  "Did I count any upside-down strips? Did I count any illustrations separately?"
+  If yes → remove those from the count.
+  "Does any tapa name appear more than twice? (maximum 2 copies exist)"
+  If yes → reduce to 2.
 
-STEP-BY-STEP METHOD — for each column:
-  Step 1: Count how many right-side-up text strips you can read.
-  Step 2: That number IS the number of cards. Stop there.
-  Step 3: Do NOT add 1 for the illustration. Do NOT add 1 for the upside-down strip.
-
-PREMIUM RULE:
-  A Premium card (black/gold, "x2") is placed ON TOP of a tapa it affects.
-  The tapa directly below the Premium card must be marked premium: true.
-  The Premium card itself is NOT a tapa — do not count it as a tapa entry.
-
-PLATO QUEMADO RULE:
-  Only ONE card exists per value (-10€, -20€, etc.).
-  If you see the same value right-side-up AND upside-down, it is the SAME card.
-  Count it ONCE. Read only the value that is right-side up.
-
-WORKED EXAMPLES:
-
-Example 1 — Column with 3 orange tapas, no Premium:
-  Visible right-side-up strips: "Rabo de Toro 70€", "Chorizo 10€", "Chorizo 10€"
-  Upside-down strip at bottom: "OROT ED OBAR €07" → IGNORE
-  → Output: 3 entries: Rabo de Toro, Chorizo, Chorizo (all premium: false)
-
-Example 2 — Column with 2 orange tapas, Premium on top card:
-  Visible right-side-up strips: "Morcilla 50€" (with Premium card on it), "Callos 60€"
-  → Output: 2 entries: Morcilla premium: true, Callos premium: false
-
-Example 3 — Single card column (only 1 card played):
-  Visible right-side-up strips: "Gazpacho 20€"
-  Upside-down strip below illustration: "OHCAPZAG €02" → IGNORE
-  → Output: 1 entry: Gazpacho premium: false
-
-Example 4 — Column with 1 tapa + Plato Quemado on top:
-  Visible right-side-up strips: "Plato Quemado -40€", "Patatas Bravas 30€"
-  Upside-down strip below Patatas Bravas illustration: IGNORE
-  → Output: Patatas Bravas premium: false + quemado valor: -40
-  (Plato Quemado is not a tapa — output it as tipo: "quemado")
 ═══════════════════════════════════════════════
-RESPONSE FORMAT
+PART 4 — OUTPUT FORMAT
 ═══════════════════════════════════════════════
 
-Respond ONLY with this exact JSON (no additional text, no markdown):
+After your reasoning, output ONLY this JSON (no markdown, no extra text):
+
 {
+  "reasoning": "<one paragraph summarising what you found: columns, card names, counts>",
   "cartas": [
     {"tipo": "tapa", "nombre": "Chorizo", "color": "naranja", "premium": false},
-    {"tipo": "tapa", "nombre": "Chorizo", "color": "naranja", "premium": true},
+    {"tipo": "tapa", "nombre": "Morcilla", "color": "naranja", "premium": true},
     {"tipo": "tapa", "nombre": "Gazpacho", "color": "verde", "premium": false},
     {"tipo": "vino"},
     {"tipo": "vino"},
@@ -165,13 +140,14 @@ Respond ONLY with this exact JSON (no additional text, no markdown):
   ]
 }
 
-JSON RULES:
-- Tapas do NOT include "valor" — the app assigns it from the inventory
-- Vino does NOT include "valor" — the app always uses 30€ per card
-- Quemado DOES include "valor" (the negative number read right-side up)
-- Include one entry per physical card visible — do not group them
-- If no cards of a type are present, simply omit entries of that type
-- Maximum 2 copies of any tapa per round`;
+RULES FOR THE JSON:
+- Include a "reasoning" field (string) — this is your self-check summary
+- Tapas: include "tipo", "nombre", "color", "premium" — NO "valor" field
+- Vino: include only {"tipo": "vino"} — no name, no value
+- Quemado: include "tipo" and "valor" (negative integer) — no name field
+- One entry per physical card — never group multiple cards into one entry
+- If a card type is not present, simply omit it from the array
+- Maximum 2 tapa entries with the same name (only 2 copies exist in the deck)`;
 
     try {
       const response = await fetch(CONFIG.WORKER_URL, {
