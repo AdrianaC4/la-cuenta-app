@@ -188,7 +188,10 @@ RULES FOR THE JSON:
       const data = await response.json();
       const texto = data.content?.[0]?.text || '';
 
-      const clean = texto.replace(/```json|```/g, '').trim();
+      // Extract JSON object from response — AI may include reasoning text before it
+      const jsonMatch = texto.match(/\{[\s\S]*\}/);
+      if (!jsonMatch) throw new Error('No JSON found in response');
+      const clean = jsonMatch[0].trim();
       const parsed = JSON.parse(clean);
 
       return {
