@@ -137,7 +137,20 @@
           <p>Analizando el tablero…</p>
         </div>
       </div>
-
+      
+<!-- Step 3: Editor de cartas -->
+      <div id="cobro-step-3" class="cobro-step hidden">
+        <div class="editor3-header">
+          <div class="editor3-totals">
+            <span class="editor3-total-label">Total</span>
+            <span id="editor-total" class="editor3-total-amount">€0</span>
+            <span id="editor-card-count" class="editor3-card-count">0 cartas</span>
+          </div>
+          <button id="btn-editor-listo" class="btn btn-primary editor3-listo">✅ Listo</button>
+        </div>
+        <div id="editor-lista" class="editor3-lista"></div>
+      </div>
+      
       <!-- Step 2: Confirmación y modificadores -->
       <div id="cobro-step-2" class="cobro-step hidden">
         <div class="step-label">Paso 2 — Confirmar importe</div>
@@ -263,17 +276,6 @@
         👥 Repetir con mismos jugadores
       </button>
       <p class="app-footer app-footer-main">© 2026 Adriana Cavallaro · La Cuenta - App De Soporte · All rights reserved</p>
-    </div>
-  </div>
-
-<!-- ═══════════════════════════════════════════
-       EDITOR DE CARTAS
-  ════════════════════════════════════════════ -->
-  <div id="editor-cartas-overlay" class="modal-overlay hidden">
-    <div class="modal-box" style="max-width:400px;max-height:80vh;display:flex;flex-direction:column;">
-      <h3 style="font-family:var(--font-display);color:var(--rojo);margin-bottom:12px;">✏️ Editar cartas</h3>
-      <div id="editor-cartas-lista" style="overflow-y:auto;flex:1;display:flex;flex-direction:column;gap:8px;"></div>
-      <button id="btn-editor-cerrar" class="btn btn-primary" style="margin-top:16px;">✅ Listo</button>
     </div>
   </div>
 
