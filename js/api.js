@@ -76,10 +76,12 @@ HOW TO COUNT TAPAS
 
 Tapas are played in stacked columns. In a column:
 - Only the BOTTOM card (last played) shows its full illustration
+- The BOTTOM also shows its bottom edge, which is identical to the top edge but rotated 180° (same value and name, upside down). This bottom edge is NOT a separate card — Count it ONLY ONCE
 - Cards above it only show their top strip with name and value right-side up
 - Count EACH visible card as a separate entry
 - If a tapa has a Premium card on top of it: mark that specific tapa with premium: true
 - Maximum 2 copies of any tapa per round (only 2 exist in the deck)
+- Only 1 plato quemado card per each value exist in the deck. Always count a plato quemado card with the same value ONLY ONCE
 
 Example column with 3 cards: Rabo de Toro (bottom, full illustration visible),
 Chorizo (above it), Chorizo with Premium on top:
