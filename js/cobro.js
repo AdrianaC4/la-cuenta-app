@@ -323,11 +323,12 @@ _calcularDesdeCartas(cartas) {
       lineas.push(`${nombreNorm}${sufijo}`);
     });
 
-    // Vinos (always 30€ each)
+   // Vinos (always 30€ each — subtract 1 if AI overcounts bottom strip)
     if (vinos.length > 0) {
-      const totalVino = vinos.length * 30;
+      const vinoCount = vinos.length > 1 ? vinos.length - 1 : vinos.length;
+      const totalVino = vinoCount * 30;
       total += totalVino;
-      lineas.push(`Vino: ${vinos.length} × 30€ = ${totalVino}€`);
+      lineas.push(`Vino: ${vinoCount} × 30€ = ${totalVino}€`);
     }
 
     // Platos quemados (negative value from AI — only case where AI reads a number)
@@ -398,13 +399,13 @@ _calcularDesdeCartas(cartas) {
       };
       const tapas = this._cartas.filter(c => c.tipo === 'tapa');
       if (tapas.length > 0) {
-        const minTapa = Math.min(...tapas.map(t => {
+        const minTapa = Math.max(10, Math.min(...tapas.map(t => {
           const n = t.nombre ? t.nombre.trim() : '';
           return VALORES_PROPINA[n]
             || VALORES_PROPINA[Object.keys(VALORES_PROPINA).find(
                 k => k.toLowerCase() === n.toLowerCase()
                )] || 0;
-        }));
+        })));
         const totalPropina = minTapa * numPropinas;
         total += totalPropina;
         mods.push(`🪙 Propina: ${numPropinas} × €${minTapa} = €${totalPropina}`);
@@ -451,10 +452,12 @@ _calcularDesdeCartas(cartas) {
     return { total: Math.round(total), pagos, mods, importeBase };
   },
 
-  _actualizarResumen() {
+ _actualizarResumen() {
     const { total, pagos, mods } = this.calcular();
     const resumen = document.getElementById('resumen-content');
     resumen.innerHTML = '';
+
+    // ── AI desglose header ──
     if (this._descripcionIA) {
       const iaRow = document.createElement('div');
       iaRow.style.cssText = 'font-size:12px;opacity:0.75;padding-bottom:6px;border-bottom:1px solid rgba(255,255,255,0.15);margin-bottom:4px;';
@@ -462,7 +465,7 @@ _calcularDesdeCartas(cartas) {
       resumen.appendChild(iaRow);
     }
 
-if (pagos.length === 0) {
+    if (pagos.length === 0) {
       const hint = document.createElement('div');
       hint.style.cssText = 'opacity:.6;font-size:13px;margin-top:4px;';
       hint.textContent = 'Selecciona quién paga ↓';
@@ -473,7 +476,6 @@ if (pagos.length === 0) {
 
     document.getElementById('btn-confirmar-cobro').disabled = false;
 
-    // Modificadores aplicados
     mods.forEach(m => {
       const row = document.createElement('div');
       row.className = 'resumen-row';
@@ -481,7 +483,6 @@ if (pagos.length === 0) {
       resumen.appendChild(row);
     });
 
-    // Pagadores
     pagos.forEach(({ jugadorId, cantidad }) => {
       const j = State.getJugador(jugadorId);
       const row = document.createElement('div');
@@ -491,6 +492,133 @@ if (pagos.length === 0) {
         <span class="resumen-amount">€${cantidad.toLocaleString('es-ES')}</span>
       `;
       resumen.appendChild(row);
+    });
+  },
+
+  // ─── Editar cartas detectadas ─────────────────────────
+
+  _VALORES_TAPA: {
+    'Chorizo': 10, 'Croquetas': 20, 'Albóndigas': 30, 'Pinchito Moruno': 40,
+    'Morcilla': 50, 'Callos': 60, 'Rabo de Toro': 70, 'Jamón de Jabugo': 100,
+    'Mejillones': 10, 'Sardinas Fritas': 20, 'Calamares a la Romana': 30,
+    'Chipirones Fritos': 40, 'Anchoa': 50, 'Pulpo a la Gallega': 60,
+    'Gambas al Ajillo': 70, 'Percebes': 100,
+    'Aceitunas': 10, 'Gazpacho': 20, 'Patatas Bravas': 30, 'Tortilla de Patatas': 40,
+    'Pimientos del Padrón': 50, 'Ensaladilla Rusa': 60, 'Berenjena con Miel': 70,
+    'Tabla de Queso': 100,
+  },
+
+  abrirEditorCartas() {
+    const overlay = document.getElementById('editor-cartas-overlay');
+    overlay.classList.remove('hidden');
+    this._renderEditorCartas();
+  },
+
+  cerrarEditorCartas() {
+    document.getElementById('editor-cartas-overlay').classList.add('hidden');
+    const calculado = this._calcularDesdeCartas(this._cartas);
+    document.getElementById('importe-input').value = calculado.total;
+    this._descripcionIA = calculado.desglose;
+    this._actualizarResumen();
+  },
+
+  _renderEditorCartas() {
+    const lista = document.getElementById('editor-cartas-lista');
+    lista.innerHTML = '';
+
+    this._cartas.forEach((carta, idx) => {
+      const row = document.createElement('div');
+      row.className = 'editor-carta-row';
+
+      let label = '';
+      if (carta.tipo === 'tapa') {
+        const val = this._VALORES_TAPA[carta.nombre] || 0;
+        label = `${carta.nombre}${carta.premium ? ' ×2' : ''} (${val}€)`;
+      } else if (carta.tipo === 'vino') {
+        label = 'Vino Tinto (30€)';
+      } else if (carta.tipo === 'quemado') {
+        label = `Plato Quemado (${carta.valor}€)`;
+      }
+
+      row.innerHTML = `
+        <span class="editor-carta-nombre">${label}</span>
+        <button class="editor-carta-remove" data-idx="${idx}">✕</button>
+      `;
+      lista.appendChild(row);
+    });
+
+    // Add card button
+    const addSection = document.createElement('div');
+    addSection.className = 'editor-add-section';
+    addSection.innerHTML = `
+      <select id="editor-add-select" class="editor-select">
+        <optgroup label="Tapas Naranja">
+          <option value="tapa|Chorizo|naranja">Chorizo (10€)</option>
+          <option value="tapa|Croquetas|naranja">Croquetas (20€)</option>
+          <option value="tapa|Albóndigas|naranja">Albóndigas (30€)</option>
+          <option value="tapa|Pinchito Moruno|naranja">Pinchito Moruno (40€)</option>
+          <option value="tapa|Morcilla|naranja">Morcilla (50€)</option>
+          <option value="tapa|Callos|naranja">Callos (60€)</option>
+          <option value="tapa|Rabo de Toro|naranja">Rabo de Toro (70€)</option>
+          <option value="tapa|Jamón de Jabugo|naranja">Jamón de Jabugo (100€)</option>
+        </optgroup>
+        <optgroup label="Tapas Azul">
+          <option value="tapa|Mejillones|azul">Mejillones (10€)</option>
+          <option value="tapa|Sardinas Fritas|azul">Sardinas Fritas (20€)</option>
+          <option value="tapa|Calamares a la Romana|azul">Calamares a la Romana (30€)</option>
+          <option value="tapa|Chipirones Fritos|azul">Chipirones Fritos (40€)</option>
+          <option value="tapa|Anchoa|azul">Anchoa (50€)</option>
+          <option value="tapa|Pulpo a la Gallega|azul">Pulpo a la Gallega (60€)</option>
+          <option value="tapa|Gambas al Ajillo|azul">Gambas al Ajillo (70€)</option>
+          <option value="tapa|Percebes|azul">Percebes (100€)</option>
+        </optgroup>
+        <optgroup label="Tapas Verde">
+          <option value="tapa|Aceitunas|verde">Aceitunas (10€)</option>
+          <option value="tapa|Gazpacho|verde">Gazpacho (20€)</option>
+          <option value="tapa|Patatas Bravas|verde">Patatas Bravas (30€)</option>
+          <option value="tapa|Tortilla de Patatas|verde">Tortilla de Patatas (40€)</option>
+          <option value="tapa|Pimientos del Padrón|verde">Pimientos del Padrón (50€)</option>
+          <option value="tapa|Ensaladilla Rusa|verde">Ensaladilla Rusa (60€)</option>
+          <option value="tapa|Berenjena con Miel|verde">Berenjena con Miel (70€)</option>
+          <option value="tapa|Tabla de Queso|verde">Tabla de Queso (100€)</option>
+        </optgroup>
+        <optgroup label="Otros">
+          <option value="vino||">Vino Tinto (30€)</option>
+          <option value="quemado||0">Plato Quemado 0€</option>
+          <option value="quemado||-10">Plato Quemado -10€</option>
+          <option value="quemado||-20">Plato Quemado -20€</option>
+          <option value="quemado||-30">Plato Quemado -30€</option>
+          <option value="quemado||-40">Plato Quemado -40€</option>
+          <option value="quemado||-50">Plato Quemado -50€</option>
+          <option value="quemado||-60">Plato Quemado -60€</option>
+          <option value="quemado||-70">Plato Quemado -70€</option>
+        </optgroup>
+      </select>
+      <button id="editor-add-btn" class="btn btn-secondary" style="flex-shrink:0">＋ Añadir</button>
+    `;
+    lista.appendChild(addSection);
+
+    // Remove listeners
+    lista.querySelectorAll('.editor-carta-remove').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const idx = parseInt(btn.dataset.idx);
+        this._cartas.splice(idx, 1);
+        this._renderEditorCartas();
+      });
+    });
+
+    // Add listener
+    document.getElementById('editor-add-btn').addEventListener('click', () => {
+      const val = document.getElementById('editor-add-select').value;
+      const [tipo, nombre, extra] = val.split('|');
+      if (tipo === 'tapa') {
+        this._cartas.push({ tipo: 'tapa', nombre, color: extra, premium: false });
+      } else if (tipo === 'vino') {
+        this._cartas.push({ tipo: 'vino' });
+      } else if (tipo === 'quemado') {
+        this._cartas.push({ tipo: 'quemado', valor: parseInt(extra) });
+      }
+      this._renderEditorCartas();
     });
   },
 
