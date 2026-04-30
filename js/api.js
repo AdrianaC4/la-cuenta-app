@@ -114,7 +114,7 @@ STEP 3 — IDENTIFY EACH CARD BY NAME
 
 STEP 4 — CHECK FOR PREMIUM
   Is any tapa covered by a black/gold "x2" card?
-  If yes → mark the tapa covered by the premium card as as premium: true.
+  If yes → Mark the tapa directly below the Premium card as premium: true.
 
 STEP 5 — SELF-CHECK before writing JSON
   For each card type, ask:
