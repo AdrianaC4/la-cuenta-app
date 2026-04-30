@@ -1242,3 +1242,70 @@ html, body {
 .app-footer-main {
   z-index: 4;
 }
+/* ─── Editor de cartas ─── */
+.resumen-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 10px;
+}
+.resumen-header .resumen-title {
+  margin-bottom: 0;
+}
+.resumen-edit-btn {
+  background: rgba(255,255,255,0.15);
+  border: 1px solid rgba(255,255,255,0.3);
+  border-radius: 8px;
+  color: var(--crema);
+  font-size: 12px;
+  font-weight: 700;
+  padding: 4px 10px;
+  cursor: pointer;
+  font-family: var(--font-body);
+  -webkit-tap-highlight-color: transparent;
+}
+.resumen-edit-btn:active { opacity: 0.7; }
+
+.editor-carta-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 4px;
+  border-bottom: 1px solid var(--crema-dark);
+}
+.editor-carta-nombre {
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--negro);
+  flex: 1;
+}
+.editor-carta-remove {
+  background: none;
+  border: none;
+  color: var(--rojo);
+  font-size: 16px;
+  cursor: pointer;
+  padding: 4px 8px;
+  flex-shrink: 0;
+  -webkit-tap-highlight-color: transparent;
+}
+.editor-add-section {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--crema-dark);
+}
+.editor-select {
+  flex: 1;
+  border: 2px solid var(--crema-dark);
+  border-radius: var(--radius-sm);
+  padding: 8px 10px;
+  font-family: var(--font-body);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--negro);
+  background: var(--crema);
+  outline: none;
+}
