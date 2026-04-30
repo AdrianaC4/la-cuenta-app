@@ -286,33 +286,53 @@ const Cobro = {
 
   // ─── Cálculo JS desde cartas detectadas por IA ───────
 
-  _calcularDesdeCartas(cartas) {
+_calcularDesdeCartas(cartas) {
+    // Inventory of values by tapa name — AI no longer sends values
+    const VALORES_TAPA = {
+      // Naranja (carne)
+      'Chorizo': 10, 'Croquetas': 20, 'Albóndigas': 30, 'Pinchito Moruno': 40,
+      'Morcilla': 50, 'Callos': 60, 'Rabo de Toro': 70, 'Jamón de Jabugo': 100,
+      // Azul (pescado)
+      'Mejillones': 10, 'Sardinas Fritas': 20, 'Calamares a la Romana': 30,
+      'Chipirones Fritos': 40, 'Anchoa': 50, 'Pulpo a la Gallega': 60,
+      'Gambas al Ajillo': 70, 'Percebes': 100,
+      // Verde (vegetal)
+      'Aceitunas': 10, 'Gazpacho': 20, 'Patatas Bravas': 30, 'Tortilla de Patatas': 40,
+      'Pimientos del Padrón': 50, 'Ensaladilla Rusa': 60, 'Berenjena con Miel': 70,
+      'Tabla de Queso': 100,
+    };
+
     let total = 0;
     const lineas = [];
 
-    // Separar por tipo
     const tapas    = cartas.filter(c => c.tipo === 'tapa');
     const vinos    = cartas.filter(c => c.tipo === 'vino');
     const quemados = cartas.filter(c => c.tipo === 'quemado');
 
-   // Tapas base (premium ya viene marcado en la carta)
+    // Tapas — look up value from inventory, case-insensitive fallback
     tapas.forEach(t => {
-      const valor = t.premium ? t.valor * 2 : t.valor;
+      // Try exact match first, then case-insensitive
+      const nombreNorm = t.nombre ? t.nombre.trim() : '';
+      const valorBase = VALORES_TAPA[nombreNorm]
+        || VALORES_TAPA[Object.keys(VALORES_TAPA).find(
+            k => k.toLowerCase() === nombreNorm.toLowerCase()
+           )] || 0;
+      const valor = t.premium ? valorBase * 2 : valorBase;
       total += valor;
-      const sufijo = t.premium ? ` ×2 (Premium) = ${valor}€` : `€`;
-      lineas.push(`${t.nombre}: ${t.valor}${sufijo}`);
+      const sufijo = t.premium ? ` ×2 Premium = ${valor}€` : ` = ${valor}€`;
+      lineas.push(`${nombreNorm}${sufijo}`);
     });
-    
-    // Vinos (siempre 30€ cada uno)
+
+    // Vinos (always 30€ each)
     if (vinos.length > 0) {
       const totalVino = vinos.length * 30;
       total += totalVino;
       lineas.push(`Vino: ${vinos.length} × 30€ = ${totalVino}€`);
     }
 
-    // Platos quemados (restan)
+    // Platos quemados (negative value from AI — only case where AI reads a number)
     quemados.forEach(q => {
-      total += q.valor; // valor ya es negativo
+      total += q.valor;
       lineas.push(`Plato Quemado: ${q.valor}€`);
     });
 
@@ -366,9 +386,25 @@ const Cobro = {
     // Propina: nº de cartas × tapa más barata detectada por IA
     const numPropinas = parseInt(document.getElementById('propina-count').textContent) || 0;
     if (numPropinas > 0) {
+   const VALORES_PROPINA = {
+        'Chorizo': 10, 'Croquetas': 20, 'Albóndigas': 30, 'Pinchito Moruno': 40,
+        'Morcilla': 50, 'Callos': 60, 'Rabo de Toro': 70, 'Jamón de Jabugo': 100,
+        'Mejillones': 10, 'Sardinas Fritas': 20, 'Calamares a la Romana': 30,
+        'Chipirones Fritos': 40, 'Anchoa': 50, 'Pulpo a la Gallega': 60,
+        'Gambas al Ajillo': 70, 'Percebes': 100,
+        'Aceitunas': 10, 'Gazpacho': 20, 'Patatas Bravas': 30, 'Tortilla de Patatas': 40,
+        'Pimientos del Padrón': 50, 'Ensaladilla Rusa': 60, 'Berenjena con Miel': 70,
+        'Tabla de Queso': 100,
+      };
       const tapas = this._cartas.filter(c => c.tipo === 'tapa');
       if (tapas.length > 0) {
-        const minTapa = Math.min(...tapas.map(t => t.valor));
+        const minTapa = Math.min(...tapas.map(t => {
+          const n = t.nombre ? t.nombre.trim() : '';
+          return VALORES_PROPINA[n]
+            || VALORES_PROPINA[Object.keys(VALORES_PROPINA).find(
+                k => k.toLowerCase() === n.toLowerCase()
+               )] || 0;
+        }));
         const totalPropina = minTapa * numPropinas;
         total += totalPropina;
         mods.push(`🪙 Propina: ${numPropinas} × €${minTapa} = €${totalPropina}`);
