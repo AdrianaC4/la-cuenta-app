@@ -109,7 +109,7 @@ JSON RULES:
 - Quemado DOES include "valor" (the negative number read right-side up)
 - Include one entry per physical card visible — do not group them
 - If no cards of a type are present, simply omit entries of that type
-- Maximum 2 copies of any tapa per round\' ;
+- Maximum 2 copies of any tapa per round`;
 
     try {
       const response = await fetch(CONFIG.WORKER_URL, {
