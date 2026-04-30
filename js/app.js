@@ -194,7 +194,7 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('btn-editar-cartas').addEventListener('click', () => {
     Cobro.abrirEditorCartas();
   });
-  document.getElementById('btn-editor-cerrar').addEventListener('click', () => {
+  document.getElementById('btn-editor-listo').addEventListener('click', () => {
     Cobro.cerrarEditorCartas();
   });
   
