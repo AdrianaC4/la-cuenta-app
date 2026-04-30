@@ -189,13 +189,21 @@ document.addEventListener('DOMContentLoaded', () => {
     }
     Cobro._actualizarResumen();
   });
-
+  
+// Editar cartas detectadas
+  document.getElementById('btn-editar-cartas').addEventListener('click', () => {
+    Cobro.abrirEditorCartas();
+  });
+  document.getElementById('btn-editor-cerrar').addEventListener('click', () => {
+    Cobro.cerrarEditorCartas();
+  });
+  
   // Confirmar cobro
   document.getElementById('btn-confirmar-cobro').addEventListener('click', () => {
     Cobro.confirmar();
   });
 
-
+  
   // ─── HISTORIAL ───────────────────────────────────────
 
   document.getElementById('btn-hist-back').addEventListener('click', () => {
@@ -214,7 +222,18 @@ document.addEventListener('DOMContentLoaded', () => {
     document.getElementById('manual-money-input').classList.add('hidden');
     UI.mostrarPagina('page-setup');
   });
-
+  
+document.getElementById('btn-repetir-jugadores').addEventListener('click', () => {
+    // Keep player names but reset money and history
+    State.iniciarPartida(null);
+    modoManual = false;
+    document.getElementById('btn-auto-money').classList.add('active');
+    document.getElementById('btn-manual-money').classList.remove('active');
+    document.getElementById('auto-money-info').classList.remove('hidden');
+    document.getElementById('manual-money-input').classList.add('hidden');
+    UI.renderTablero();
+    UI.mostrarPagina('page-main');
+  });
 
   // ─── MODAL overlay click para cerrar ─────────────────
 
