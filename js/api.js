@@ -13,75 +13,102 @@ const API = {
    * @returns {Promise<{ importe: number, descripcion: string }>}
    */
   async analizarTablero(base64Image, mediaType = 'image/jpeg') {
-const prompt = `Eres el asistente de la app de soporte del juego de cartas español "La Cuenta" (2 Tomatoes Games).
+const prompt = `You are the assistant for the Spanish board game "La Cuenta" (2 Tomatoes Games).
 
-En esta imagen aparece el tablero del juego con cartas jugadas durante una ronda.
+This image shows the game board with cards played during a round.
 
-Tu única tarea es IDENTIFICAR y LISTAR las cartas visibles. NO calcules ningún total — eso lo hace la app.
-
-═══════════════════════════════════════════════
-INVENTARIO COMPLETO DEL MAZO (solo existen estas cartas)
-═══════════════════════════════════════════════
-
-TAPAS NARANJA (carne):
-  Chorizo 10€, Croquetas 20€, Albóndigas 30€, Pinchito Moruno 40€,
-  Morcilla 50€, Callos 60€, Rabo de Toro 70€, Jamón de Jabugo 100€
-  (hay 2 copias de cada una)
-
-TAPAS AZUL (pescado):
-  Mejillones 10€, Sardinas Fritas 20€, Calamares a la Romana 30€,
-  Chipirones Fritos 40€, Anchoa 50€, Pulpo a la Gallega 60€,
-  Gambas al Ajillo 70€, Percebes 100€
-  (hay 2 copias de cada una)
-
-TAPAS VERDE (vegetal):
-  Aceitunas 10€, Gazpacho 20€, Patatas Bravas 30€, Tortilla de Patatas 40€,
-  Pimientos del Padrón 50€, Ensaladilla Rusa 60€, Berenjena con Miel 70€,
-  Tabla de Queso 100€
-  (hay 2 copias de cada una)
-
-VINO TINTO (10 cartas en el mazo):
-  Cartas de color turquesa/morado con una botella y copa de vino.
-  IMPORTANTE: NO leas el valor impreso en la carta. Cada carta vale 30€ fijo,
-  pero tú solo debes CONTAR cuántas cartas de vino ves — la app multiplica por 30€.
-
-PLATO QUEMADO (8 cartas):
-  Carta negra con llamas. Valores posibles: 0€, -10€, -20€, -30€, -40€, -50€, -60€, -70€.
-  Lee el valor negativo impreso en la carta.
-
-PREMIUM (4 cartas):
-  Carta negra/dorada con símbolo x2 o "Premium".
-  Dobla el valor de la tapa de la misma columna junto a la que se jugó.
-
-IGNORAR COMPLETAMENTE (no las incluyas en la respuesta):
-  Propina, A Medias, A Pachas, Cambio de Sentido, Pastel de Cumpleaños,
-  Toilette, Café.
+Your only task is to IDENTIFY and COUNT the visible cards. Do NOT calculate any total — the app handles that.
 
 ═══════════════════════════════════════════════
-INSTRUCCIONES DE DETECCIÓN
+CRITICAL RULE — READ THIS FIRST
 ═══════════════════════════════════════════════
 
-1. Para cada TAPA visible: indica su nombre exacto del inventario, color y valor.
-   - Si ves una carta que no coincide con ninguna del inventario, ignórala.
-   - Si hay Premium en la misma columna: marca esa tapa como premium: true.
+IGNORE any text, name or number that appears upside-down in the image.
+Every card shows its value in two opposite corners — the bottom corner always
+appears inverted. Only read text that is right-side up.
+If a name or value appears twice on the same card (once normal, once inverted),
+count that card ONLY ONCE.
 
-2. Para VINO: cuenta cuántas cartas de vino hay en total. Devuelve una entrada
-   por cada carta de vino individual. NO leas el valor de la carta.
+═══════════════════════════════════════════════
+COMPLETE DECK INVENTORY
+═══════════════════════════════════════════════
 
-3. Para PLATO QUEMADO: lee el valor negativo impreso.
+ORANGE TAPAS (meat) — identify by name and illustration:
+  Chorizo, Croquetas, Albóndigas, Pinchito Moruno,
+  Morcilla, Callos, Rabo de Toro, Jamón de Jabugo
+  (2 copies of each in the deck)
 
-4. Si no puedes leer un nombre con claridad, elige el más parecido del inventario.
+BLUE TAPAS (fish) — identify by name and illustration:
+  Mejillones, Sardinas Fritas, Calamares a la Romana,
+  Chipirones Fritos, Anchoa, Pulpo a la Gallega,
+  Gambas al Ajillo, Percebes
+  (2 copies of each in the deck)
 
-RESPONDE ÚNICAMENTE con este JSON exacto (sin texto adicional, sin markdown):
+GREEN TAPAS (vegetable) — identify by name and illustration:
+  Aceitunas, Gazpacho, Patatas Bravas, Tortilla de Patatas,
+  Pimientos del Padrón, Ensaladilla Rusa, Berenjena con Miel,
+  Tabla de Queso
+  (2 copies of each in the deck)
+
+VINO TINTO (red wine cards):
+  Turquoise/purple cards with a bottle and wine glass.
+  Only COUNT how many there are. Do not read their printed value.
+
+PLATO QUEMADO (burnt plate):
+  Black card with flames and a printed negative value.
+  Possible values (only ONE card exists per value): 0€, -10€, -20€, -30€, -40€, -50€, -60€, -70€.
+  IMPORTANT: Only ONE card exists per value. If you see -40€ right-side up AND -40€
+  upside-down, it is the SAME card — count it ONCE.
+  Only read the value that appears right-side up.
+
+PREMIUM:
+  Black/gold card with "x2". Always partially covers the tapa it doubles.
+  Mark the affected tapa as premium: true.
+  Each Premium card affects only ONE tapa. There can be multiple per round.
+
+IGNORE COMPLETELY (do not include in response):
+  Propina, A Medias, A Pachas, Cambio de Sentido,
+  Pastel de Cumpleaños, Toilette, Café.
+
+═══════════════════════════════════════════════
+HOW TO COUNT TAPAS
+═══════════════════════════════════════════════
+
+Tapas are played in stacked columns. In a column:
+- Only the BOTTOM card (last played) shows its full illustration
+- Cards above it only show their top strip with name and value right-side up
+- Count EACH visible card as a separate entry
+- If a tapa has a Premium card on top of it: mark that specific tapa with premium: true
+- Maximum 2 copies of any tapa per round (only 2 exist in the deck)
+
+Example column with 3 cards: Rabo de Toro (bottom, full illustration visible),
+Chorizo (above it), Chorizo with Premium on top:
+→ output: Chorizo premium:false, Chorizo premium:true, Rabo de Toro premium:false
+
+═══════════════════════════════════════════════
+RESPONSE FORMAT
+═══════════════════════════════════════════════
+
+Respond ONLY with this exact JSON (no additional text, no markdown):
 {
   "cartas": [
-    {"tipo": "tapa", "nombre": "Gazpacho", "color": "verde", "valor": 20, "premium": false},
-    {"tipo": "tapa", "nombre": "Gazpacho", "color": "verde", "valor": 20, "premium": true},
-    {"tipo": "vino", "nombre": "Vino Tinto", "valor": 30},
-    {"tipo": "vino", "nombre": "Vino Tinto", "valor": 30},
-    {"tipo": "quemado", "nombre": "Plato Quemado", "valor": -40}
+    {"tipo": "tapa", "nombre": "Chorizo", "color": "naranja", "premium": false},
+    {"tipo": "tapa", "nombre": "Chorizo", "color": "naranja", "premium": true},
+    {"tipo": "tapa", "nombre": "Gazpacho", "color": "verde", "premium": false},
+    {"tipo": "vino"},
+    {"tipo": "vino"},
+    {"tipo": "quemado", "valor": -40}
   ]
-}`;
+}
+
+JSON RULES:
+- Tapas do NOT include "valor" — the app assigns it from the inventory
+- Vino does NOT include "valor" — the app always uses 30€ per card
+- Quemado DOES include "valor" (the negative number read right-side up)
+- Include one entry per physical card visible — do not group them
+- If no cards of a type are present, simply omit entries of that type
+- Maximum 2 copies of any tapa per round ;
+
     try {
       const response = await fetch(CONFIG.WORKER_URL, {
         method: 'POST',
@@ -121,7 +148,6 @@ RESPONDE ÚNICAMENTE con este JSON exacto (sin texto adicional, sin markdown):
       const data = await response.json();
       const texto = data.content?.[0]?.text || '';
 
-      // Parsear JSON de la respuesta
       const clean = texto.replace(/```json|```/g, '').trim();
       const parsed = JSON.parse(clean);
 
@@ -135,3 +161,4 @@ RESPONDE ÚNICAMENTE con este JSON exacto (sin texto adicional, sin markdown):
     }
   },
 };
+
