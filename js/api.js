@@ -83,7 +83,7 @@ Tapas are played in stacked columns. In a column:
 
 Example column with 3 cards: Rabo de Toro (bottom, full illustration visible),
 Chorizo (above it), Chorizo with Premium on top:
-→ output: Chorizo premium:false, Chorizo premium:true, Rabo de Toro premium:false
+→ output: Chorizo premium:true, Chorizo premium:false, Rabo de Toro premium:false
 
 ═══════════════════════════════════════════════
 RESPONSE FORMAT
