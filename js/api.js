@@ -71,22 +71,84 @@ IGNORE COMPLETELY (do not include in response):
   Pastel de Cumpleaños, Toilette, Café.
 
 ═══════════════════════════════════════════════
-HOW TO COUNT TAPAS
+HOW TO COUNT TAPAS — READ CAREFULLY
 ═══════════════════════════════════════════════
 
-Tapas are played in stacked columns. In a column:
-- Only the BOTTOM card (last played) shows its full illustration
-- The BOTTOM also shows its bottom edge, which is identical to the top edge but rotated 180° (same value and name, upside down). This bottom edge is NOT a separate card — Count it ONLY ONCE
-- Cards above it only show their top strip with name and value right-side up
-- Count EACH visible card as a separate entry
-- If a tapa has a Premium card on top of it: mark that specific tapa with premium: true
-- Maximum 2 copies of any tapa per round (only 2 exist in the deck)
-- Only 1 plato quemado card per each value exist in the deck. Always count a plato quemado card with the same value ONLY ONCE
+Tapas of the same color are stacked in a column. Here is the exact physical
+structure of every column, and the precise rule for counting:
 
-Example column with 3 cards: Rabo de Toro (bottom, full illustration visible),
-Chorizo (above it), Chorizo with Premium on top:
-→ output: Chorizo premium:true, Chorizo premium:false, Rabo de Toro premium:false
+PHYSICAL STRUCTURE OF A COLUMN:
+┌─────────────────────────────────────────────┐
+│  [TOP CARD]                                 │
+│  ┌──────────────────┐  ← top strip          │
+│  │ NAME        10€  │  ← RIGHT-SIDE UP ✓    │
+│  └──────────────────┘                       │
+│                                             │
+│  [MIDDLE CARD(S)] — partially covered       │
+│  ┌──────────────────┐  ← top strip only     │
+│  │ NAME        30€  │  ← RIGHT-SIDE UP ✓    │
+│  └──────────────────┘                       │
+│                                             │
+│  [BOTTOM CARD] — fully visible              │
+│  ┌──────────────────┐  ← top strip          │
+│  │ NAME        70€  │  ← RIGHT-SIDE UP ✓    │
+│  ├──────────────────┤                       │
+│  │  [ILLUSTRATION]  │  ← food artwork       │
+│  ├──────────────────┤                       │
+│  │  €07        EMAN │  ← UPSIDE-DOWN ✗      │
+│  └──────────────────┘  ← IGNORE THIS STRIP  │
+└─────────────────────────────────────────────┘
 
+COUNTING RULE — apply this exact formula for every column:
+
+  TOTAL CARDS IN COLUMN =
+    (number of RIGHT-SIDE-UP text strips visible in the column)
+    ← this already includes the bottom card's top strip
+
+  DO NOT ADD anything for the upside-down strip at the bottom.
+  DO NOT ADD anything for the food illustration (it belongs to the bottom card).
+
+In other words:
+  - Every right-side-up strip = 1 card ✓
+  - The food illustration = already counted via its own right-side-up strip ✓
+  - The upside-down strip below the illustration = 0 cards ✗ IGNORE
+
+STEP-BY-STEP METHOD — for each column:
+  Step 1: Count how many right-side-up text strips you can read.
+  Step 2: That number IS the number of cards. Stop there.
+  Step 3: Do NOT add 1 for the illustration. Do NOT add 1 for the upside-down strip.
+
+PREMIUM RULE:
+  A Premium card (black/gold, "x2") is placed ON TOP of a tapa it affects.
+  The tapa directly below the Premium card must be marked premium: true.
+  The Premium card itself is NOT a tapa — do not count it as a tapa entry.
+
+PLATO QUEMADO RULE:
+  Only ONE card exists per value (-10€, -20€, etc.).
+  If you see the same value right-side-up AND upside-down, it is the SAME card.
+  Count it ONCE. Read only the value that is right-side up.
+
+WORKED EXAMPLES:
+
+Example 1 — Column with 3 orange tapas, no Premium:
+  Visible right-side-up strips: "Rabo de Toro 70€", "Chorizo 10€", "Chorizo 10€"
+  Upside-down strip at bottom: "OROT ED OBAR €07" → IGNORE
+  → Output: 3 entries: Rabo de Toro, Chorizo, Chorizo (all premium: false)
+
+Example 2 — Column with 2 orange tapas, Premium on top card:
+  Visible right-side-up strips: "Morcilla 50€" (with Premium card on it), "Callos 60€"
+  → Output: 2 entries: Morcilla premium: true, Callos premium: false
+
+Example 3 — Single card column (only 1 card played):
+  Visible right-side-up strips: "Gazpacho 20€"
+  Upside-down strip below illustration: "OHCAPZAG €02" → IGNORE
+  → Output: 1 entry: Gazpacho premium: false
+
+Example 4 — Column with 1 tapa + Plato Quemado on top:
+  Visible right-side-up strips: "Plato Quemado -40€", "Patatas Bravas 30€"
+  Upside-down strip below Patatas Bravas illustration: IGNORE
+  → Output: Patatas Bravas premium: false + quemado valor: -40
+  (Plato Quemado is not a tapa — output it as tipo: "quemado")
 ═══════════════════════════════════════════════
 RESPONSE FORMAT
 ═══════════════════════════════════════════════
