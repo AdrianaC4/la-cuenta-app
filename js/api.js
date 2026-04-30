@@ -80,9 +80,9 @@ PLATO QUEMADO — black card with flames. Negative value printed on it.
   it is the same card — count it once.
 
 PREMIUM — black/gold card with "x2". Always placed on top of a tapa.
-  A Premium card (black/gold, "x2") is placed ON TOP of a tapa it affects.
-  The tapa directly below the Premium card must be marked premium: true.
-  The Premium card itself is NOT a tapa — do not count it as a tapa entry.
+  The tapa played together with Premium sits ON TOP of the Premium card in the stack.
+  Therefore: mark the tapa directly ABOVE the Premium card as premium: true.
+  Do not add a separate tapa entry for the Premium card itself.
 
 IGNORE COMPLETELY — do not include in output:
   Propina, A Medias, A Pachas, Cambio de Sentido, Pastel de Cumpleaños,
@@ -113,8 +113,10 @@ STEP 3 — IDENTIFY EACH CARD BY NAME
   If a name is unclear, choose the closest match from the deck list.
 
 STEP 4 — CHECK FOR PREMIUM
-  Is any tapa covered by a black/gold "x2" card?
-  If yes → Mark the tapa directly below the Premium card as premium: true.
+  Is there a black/gold "x2" Premium card visible in any column?
+  If yes → the tapa played with it sits ON TOP of the Premium card.
+  Mark the tapa directly ABOVE the Premium card as premium: true.
+  The card directly below the Premium card is NOT affected.
 
 STEP 5 — SELF-CHECK before writing JSON
   For each card type, ask:
