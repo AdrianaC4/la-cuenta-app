@@ -258,6 +258,12 @@ const Cobro = {
 
      document.getElementById('analyzing-loader').classList.add('hidden');
       this._cartas = resultado.cartas || [];
+      // Apply vino correction directly to _cartas — subtract 1 if AI overcounts
+      const vinoCartas = this._cartas.filter(c => c.tipo === 'vino');
+      if (vinoCartas.length > 1) {
+        const idx = this._cartas.findIndex(c => c.tipo === 'vino');
+        this._cartas.splice(idx, 1);
+      }
       const calculado = this._calcularDesdeCartas(this._cartas);
       document.getElementById('importe-input').value = calculado.total;
       this._descripcionIA = calculado.desglose;
@@ -277,13 +283,7 @@ const Cobro = {
       this._actualizarResumen();
     }
   },
-  // ─── Step management ────────────────────────────────
-
-  _mostrarStep(n) {
-    document.getElementById('cobro-step-1').classList.toggle('hidden', n !== 1);
-    document.getElementById('cobro-step-2').classList.toggle('hidden', n !== 2);
-  },
-
+  
   // ─── Cálculo JS desde cartas detectadas por IA ───────
 
 _calcularDesdeCartas(cartas) {
@@ -316,6 +316,10 @@ _calcularDesdeCartas(cartas) {
       const valorBase = VALORES_TAPA[nombreNorm]
         || VALORES_TAPA[Object.keys(VALORES_TAPA).find(
             k => k.toLowerCase() === nombreNorm.toLowerCase()
+           )]
+        || VALORES_TAPA[Object.keys(VALORES_TAPA).find(
+            k => nombreNorm.toLowerCase().startsWith(k.toLowerCase().slice(0, 8))
+              || k.toLowerCase().startsWith(nombreNorm.toLowerCase().slice(0, 8))
            )] || 0;
       const valor = t.premium ? valorBase * 2 : valorBase;
       total += valor;
@@ -323,12 +327,11 @@ _calcularDesdeCartas(cartas) {
       lineas.push(`${nombreNorm}${sufijo}`);
     });
 
-   // Vinos (always 30€ each — subtract 1 if AI overcounts bottom strip)
+   // Vinos (always 30€ each)
     if (vinos.length > 0) {
-      const vinoCount = vinos.length > 1 ? vinos.length - 1 : vinos.length;
-      const totalVino = vinoCount * 30;
+      const totalVino = vinos.length * 30;
       total += totalVino;
-      lineas.push(`Vino: ${vinoCount} × 30€ = ${totalVino}€`);
+      lineas.push(`Vino: ${vinos.length} × 30€ = ${totalVino}€`);
     }
 
     // Platos quemados (negative value from AI — only case where AI reads a number)
@@ -404,6 +407,10 @@ _calcularDesdeCartas(cartas) {
           return VALORES_PROPINA[n]
             || VALORES_PROPINA[Object.keys(VALORES_PROPINA).find(
                 k => k.toLowerCase() === n.toLowerCase()
+               )]
+            || VALORES_PROPINA[Object.keys(VALORES_PROPINA).find(
+                k => n.toLowerCase().startsWith(k.toLowerCase().slice(0, 8))
+                  || k.toLowerCase().startsWith(n.toLowerCase().slice(0, 8))
                )] || 0;
         })));
         const totalPropina = minTapa * numPropinas;
@@ -509,43 +516,160 @@ _calcularDesdeCartas(cartas) {
   },
 
   abrirEditorCartas() {
-    const overlay = document.getElementById('editor-cartas-overlay');
-    overlay.classList.remove('hidden');
-    this._renderEditorCartas();
+    this._mostrarStep(3);
+    this._renderEditorStep3();
   },
 
   cerrarEditorCartas() {
-    document.getElementById('editor-cartas-overlay').classList.add('hidden');
-    const calculado = this._calcularDesdeCartas(this._cartas);
-    document.getElementById('importe-input').value = calculado.total;
-    this._descripcionIA = calculado.desglose;
+    this._calcularYActualizarDesdeCartas();
+    this._mostrarStep(2);
+    this._renderPagadorList();
+    this._renderModificadorLists();
     this._actualizarResumen();
   },
 
-  _renderEditorCartas() {
-    const lista = document.getElementById('editor-cartas-lista');
+  _calcularYActualizarDesdeCartas() {
+    const calculado = this._calcularDesdeCartas(this._cartas);
+    document.getElementById('importe-input').value = calculado.total;
+    this._descripcionIA = calculado.desglose;
+  },
+
+  _mostrarStep(n) {
+    document.getElementById('cobro-step-1').classList.toggle('hidden', n !== 1);
+    document.getElementById('cobro-step-2').classList.toggle('hidden', n !== 2);
+    document.getElementById('cobro-step-3').classList.toggle('hidden', n !== 3);
+  },
+
+  _renderEditorStep3() {
+    const VALORES = this._VALORES_TAPA;
+
+    // Build a grouped count of current _cartas
+    const grupos = {};
+    this._cartas.forEach(c => {
+      let key = '';
+      if (c.tipo === 'tapa') key = `tapa|${c.nombre}|${c.color}|${c.premium ? '1' : '0'}`;
+      else if (c.tipo === 'vino') key = 'vino||';
+      else if (c.tipo === 'quemado') key = `quemado||${c.valor}`;
+      grupos[key] = (grupos[key] || 0) + 1;
+    });
+
+    this._editorGrupos = grupos;
+    this._refreshEditorStep3();
+  },
+
+  _refreshEditorStep3() {
+    const VALORES = this._VALORES_TAPA;
+    const grupos = this._editorGrupos;
+
+    // Recalculate total from grupos
+    let total = 0;
+    let cardCount = 0;
+    Object.entries(grupos).forEach(([key, count]) => {
+      const [tipo, nombre, extra, premium] = key.split('|');
+      if (tipo === 'tapa') {
+        const val = VALORES[nombre] || 0;
+        total += (premium === '1' ? val * 2 : val) * count;
+        cardCount += count;
+      } else if (tipo === 'vino') {
+        total += 30 * count;
+        cardCount += count;
+      } else if (tipo === 'quemado') {
+        total += parseInt(extra) * count;
+        cardCount += count;
+      }
+    });
+    total = Math.max(0, total);
+
+    // Update live total and card count
+    document.getElementById('editor-total').textContent = `€${total}`;
+    document.getElementById('editor-card-count').textContent = `${cardCount} carta${cardCount !== 1 ? 's' : ''}`;
+
+    // Render existing cards list
+    const lista = document.getElementById('editor-lista');
     lista.innerHTML = '';
 
-    this._cartas.forEach((carta, idx) => {
-      const row = document.createElement('div');
-      row.className = 'editor-carta-row';
+    const ALL_CARDS = [
+      { key: 'tapa|Chorizo|naranja|0',            label: 'Chorizo',              sub: '10€ · naranja' },
+      { key: 'tapa|Croquetas|naranja|0',           label: 'Croquetas',            sub: '20€ · naranja' },
+      { key: 'tapa|Albóndigas|naranja|0',          label: 'Albóndigas',           sub: '30€ · naranja' },
+      { key: 'tapa|Pinchito Moruno|naranja|0',     label: 'Pinchito Moruno',      sub: '40€ · naranja' },
+      { key: 'tapa|Morcilla|naranja|0',            label: 'Morcilla',             sub: '50€ · naranja' },
+      { key: 'tapa|Callos|naranja|0',              label: 'Callos',               sub: '60€ · naranja' },
+      { key: 'tapa|Rabo de Toro|naranja|0',        label: 'Rabo de Toro',         sub: '70€ · naranja' },
+      { key: 'tapa|Jamón de Jabugo|naranja|0',     label: 'Jamón de Jabugo',      sub: '100€ · naranja' },
+      { key: 'tapa|Mejillones|azul|0',             label: 'Mejillones',           sub: '10€ · azul' },
+      { key: 'tapa|Sardinas Fritas|azul|0',        label: 'Sardinas Fritas',      sub: '20€ · azul' },
+      { key: 'tapa|Calamares a la Romana|azul|0',  label: 'Calamares a la Romana',sub: '30€ · azul' },
+      { key: 'tapa|Chipirones Fritos|azul|0',      label: 'Chipirones Fritos',    sub: '40€ · azul' },
+      { key: 'tapa|Anchoa|azul|0',                 label: 'Anchoa',               sub: '50€ · azul' },
+      { key: 'tapa|Pulpo a la Gallega|azul|0',     label: 'Pulpo a la Gallega',   sub: '60€ · azul' },
+      { key: 'tapa|Gambas al Ajillo|azul|0',       label: 'Gambas al Ajillo',     sub: '70€ · azul' },
+      { key: 'tapa|Percebes|azul|0',               label: 'Percebes',             sub: '100€ · azul' },
+      { key: 'tapa|Aceitunas|verde|0',             label: 'Aceitunas',            sub: '10€ · verde' },
+      { key: 'tapa|Gazpacho|verde|0',              label: 'Gazpacho',             sub: '20€ · verde' },
+      { key: 'tapa|Patatas Bravas|verde|0',        label: 'Patatas Bravas',       sub: '30€ · verde' },
+      { key: 'tapa|Tortilla de Patatas|verde|0',   label: 'Tortilla de Patatas',  sub: '40€ · verde' },
+      { key: 'tapa|Pimientos del Padrón|verde|0',  label: 'Pimientos del Padrón', sub: '50€ · verde' },
+      { key: 'tapa|Ensaladilla Rusa|verde|0',      label: 'Ensaladilla Rusa',     sub: '60€ · verde' },
+      { key: 'tapa|Berenjena con Miel|verde|0',    label: 'Berenjena con Miel',   sub: '70€ · verde' },
+      { key: 'tapa|Tabla de Queso|verde|0',        label: 'Tabla de Queso',       sub: '100€ · verde' },
+      { key: 'vino||',                             label: 'Vino Tinto',           sub: '30€' },
+      { key: 'quemado||0',                         label: 'Plato Quemado',        sub: '0€' },
+      { key: 'quemado||-10',                       label: 'Plato Quemado',        sub: '-10€' },
+      { key: 'quemado||-20',                       label: 'Plato Quemado',        sub: '-20€' },
+      { key: 'quemado||-30',                       label: 'Plato Quemado',        sub: '-30€' },
+      { key: 'quemado||-40',                       label: 'Plato Quemado',        sub: '-40€' },
+      { key: 'quemado||-50',                       label: 'Plato Quemado',        sub: '-50€' },
+      { key: 'quemado||-60',                       label: 'Plato Quemado',        sub: '-60€' },
+      { key: 'quemado||-70',                       label: 'Plato Quemado',        sub: '-70€' },
+    ];
 
-      let label = '';
-      if (carta.tipo === 'tapa') {
-        const val = this._VALORES_TAPA[carta.nombre] || 0;
-        label = `${carta.nombre}${carta.premium ? ' ×2' : ''} (${val}€)`;
-      } else if (carta.tipo === 'vino') {
-        label = 'Vino Tinto (30€)';
-      } else if (carta.tipo === 'quemado') {
-        label = `Plato Quemado (${carta.valor}€)`;
-      }
+    ALL_CARDS.forEach(({ key, label, sub }) => {
+      const count = grupos[key] || 0;
+      const row = document.createElement('div');
+      row.className = 'editor3-row';
 
       row.innerHTML = `
-        <span class="editor-carta-nombre">${label}</span>
-        <button class="editor-carta-remove" data-idx="${idx}">✕</button>
+        <div class="editor3-info">
+          <span class="editor3-nombre">${label}</span>
+          <span class="editor3-sub">${sub}</span>
+        </div>
+        <div class="editor3-stepper">
+          <button class="editor3-btn" data-key="${key}" data-delta="-1">−</button>
+          <span class="editor3-count">${count}</span>
+          <button class="editor3-btn" data-key="${key}" data-delta="1">＋</button>
+        </div>
       `;
       lista.appendChild(row);
     });
+
+    // Stepper listeners
+    lista.querySelectorAll('.editor3-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const key = btn.dataset.key;
+        const delta = parseInt(btn.dataset.delta);
+        this._editorGrupos[key] = Math.max(0, (this._editorGrupos[key] || 0) + delta);
+        this._syncCartasFromGrupos();
+        this._refreshEditorStep3();
+      });
+    });
+  },
+
+  _syncCartasFromGrupos() {
+    this._cartas = [];
+    Object.entries(this._editorGrupos).forEach(([key, count]) => {
+      const [tipo, nombre, extra, premium] = key.split('|');
+      for (let i = 0; i < count; i++) {
+        if (tipo === 'tapa') {
+          this._cartas.push({ tipo: 'tapa', nombre, color: extra === 'naranja' ? 'naranja' : extra === 'azul' ? 'azul' : 'verde', premium: premium === '1' });
+        } else if (tipo === 'vino') {
+          this._cartas.push({ tipo: 'vino' });
+        } else if (tipo === 'quemado') {
+          this._cartas.push({ tipo: 'quemado', valor: parseInt(extra) });
+        }
+      }
+    });
+  },
 
     // Add card button
     const addSection = document.createElement('div');
